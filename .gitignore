@@ -1,0 +1,12 @@
+.vscode/
+
+checkpoints/
+wandb/
+*/wandb/*
+
+# Cache
+__pycache__/*
+.ipynb_checkpoints/*
+
+# Local files
+start.sh
