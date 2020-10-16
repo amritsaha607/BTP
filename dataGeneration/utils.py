@@ -4,7 +4,7 @@ from utils.parameters import EPS_0
 
 
 def getP(r1, r2):
-    '''6
+    '''
         Returns P from r1 & r2
         (P is the ratio of the shell volume to the total particle volume)
     '''
