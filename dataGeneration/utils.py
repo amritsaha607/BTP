@@ -48,7 +48,7 @@ def getAlpha(eps, r, baked=False):
     e3 = eps['e3']
     r2 = r['r2']
 
-    if baked:    
+    if baked:
         ea = eps['ea']
         eb = eps['eb']
     else:

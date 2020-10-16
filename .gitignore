@@ -8,6 +8,8 @@ wandb/
 __pycache__/*
 .ipynb_checkpoints/*
 debug/.ipynb_checkpoints/*
+*/__pycache__/*
+*/.ipynb_checkpoints/*
 
 
 # Local files
