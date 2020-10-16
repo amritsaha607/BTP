@@ -15,7 +15,7 @@ def getEps(f_in='csv/Au.csv', f_out='csv/Au_updated.csv'):
     for (wl, n, k) in zip(content['wl'], content['n'], content['k']):
         er = n**2-k**2
         ei = 2*n*k
-        data['wl'].append(wl)
+        data['wl'].append(wl*1e3)   # um => nm
         data['n'].append(n)
         data['k'].append(k)
         data['er'].append(er)
