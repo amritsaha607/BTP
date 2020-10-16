@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from collections import defaultdict
 
 def getEps(f_in='csv/Au.csv', f_out='csv/Au_updated.csv'):
@@ -20,6 +21,31 @@ def getEps(f_in='csv/Au.csv', f_out='csv/Au_updated.csv'):
         data['k'].append(k)
         data['er'].append(er)
         data['ei'].append(ei)
+    
+    data = pd.DataFrame(data)
+    data.to_csv(f_out, index=False) 
+    
+
+def getEpsInterpolated(f_in='csv/Au.csv', f_out='csv/Au_interpolated.csv', interval=1):
+    '''
+        Takes input CSV file containing wavelength, n & k as columns
+        Interpolated the data with interval of "interval" w.r.t. wavelength
+        refractive index = n+j*k
+        epsilon = (refractive index)^2
+        Calculates real and imaginary part of epsilon and writes new csv
+    '''
+
+    content = pd.read_csv(f_in)
+    data = defaultdict(list)
+
+    wls, ns, ks = content['wl']*1e3, content['n'], content['k']
+    
+    wls_all = np.arange(wls.min(), wls.max(), 1.0)
+    data['wl'] = wls_all
+    data['n'] = np.interp(wls_all, wls, ns)
+    data['k'] = np.interp(wls_all, wls, ks)
+    data['er'] = data['n']**2 - data['k']**2
+    data['ei'] = 2 * data['n'] * data['k']
     
     data = pd.DataFrame(data)
     data.to_csv(f_out, index=False) 
