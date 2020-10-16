@@ -77,6 +77,6 @@ def getArea(r, eps, lambd):
     '''
     k = 2*np.pi/lambd
     alpha = getAlpha(eps, r, baked=False)
-    area = (1/(6*np.pi*(EPS_0**2))) * (k**4) * (alpha**2)
+    area = (1/(6*np.pi*(EPS_0**2))) * (k**4) * (abs(alpha)**2)
     return area
 
