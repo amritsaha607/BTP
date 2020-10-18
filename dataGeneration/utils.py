@@ -63,7 +63,7 @@ def getAlpha(eps, r, baked=False):
 def getArea(r, eps, lambd):
     '''
         Returns area from radius & epsilon input
-        Args:
+        Args: [All args are in SI unit]
             r : radius data (dict)
                 r1
                 r2
