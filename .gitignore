@@ -7,7 +7,7 @@ wandb/
 # Cache
 __pycache__/*
 .ipynb_checkpoints/*
-debug/*
+debug
 debug/.ipynb_checkpoints/*
 */__pycache__/*
 */.ipynb_checkpoints/*
