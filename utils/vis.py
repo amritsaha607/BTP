@@ -35,9 +35,27 @@ def plotArea(r, eps, lambd,
     figs=['sca', 'abs', 'tot'], overlay=False, label_mode=['r1', 'r2'],
     size='auto', debug=True):
 
+    """
+        Function to plot area w.r.t. varying wavelength for different parameters
+        Args:
+            r : (dict) radius data
+            eps : (dict) epsilon data
+            lamd : (float array) varying wavelength data
+            figs : (list) figures to show
+                    'sca': scattering area
+                    'abs': absorption area
+                    'tot': total area
+            overlay : (bool) To overlap the plots for different parameters or not
+            label_mode : (list) label with r1 or r2 or both values
+            size : figure size ('auto' for auto adjustments)
+            debug : set True while plotting in notebook
+                    set False if you wanna get the figure object
+    """
+
     n_rows = 1 if overlay else len(figs)
     n_cols = len(figs) if overlay else len(r['r2'])
 
+    # Generate size for 'auto' size mode
     if size=='auto':
         if overlay:
             size = (n_cols*5, 4)
@@ -46,6 +64,7 @@ def plotArea(r, eps, lambd,
     
     fig, ax = plt.subplots(n_rows, n_cols, figsize=size)
 
+    # Make plots
     for col, (r1, r2) in enumerate(zip(r['r1'], r['r2'])):
         r_cp = r.copy()
         r_cp['r1'] = r1
@@ -64,7 +83,6 @@ def plotArea(r, eps, lambd,
             if 'r2' in label_mode:
                 label_.append("r2: {}nm".format(int(r2*1e9)))
             label_ = ', '.join(label_)
-            # label_ = "r1: {}nm, r2: {}nm".format(int(r1*1e9), int(r2*1e9))
 
             if figs[row]=='sca':
                 ax_.plot(lambd*1e9, area_sca, label=label_)
@@ -82,4 +100,8 @@ def plotArea(r, eps, lambd,
             if overlay:
                 ax_.set_title(figs[row])
 
-    plt.show()
+    if debug:
+        plt.show()
+
+    plt.close()
+    return fig
