@@ -14,7 +14,11 @@ def extractData(filename):
     df = pd.read_csv(filename)
 
     # Input contains two columns, wavelength and area
-    x = np.c_[df['lambd'], df['A_tot']]
+    # x = np.c_[df['lambd'], df['A_tot']]
+
+    # Input data is a list of combined wavelength and area
+    # First all wavelength data followed by area data
+    x = np.concatenate([df['lambd'].values, df['A_tot'].values], axis=0)
 
     # Output contains parameters like r1, r2, eps_1, eps_2 & eps_3
     y = np.array([
