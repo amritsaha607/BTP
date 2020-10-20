@@ -51,13 +51,24 @@ except:
 
 
 # Dataset
-dataset = AreaDataset(
+train_set = AreaDataset(
     root=train_root,
     formats=['.csv'],
 )
-dataloader = DataLoader(
-    dataset,
-    batch_size=4,
+train_loader = DataLoader(
+    train_set,
+    batch_size=batch_size,
+    num_workers=8,
+    collate_fn=collate,
+    drop_last=False,
+)
+val_set = AreaDataset(
+    root=val_root,
+    formats=['.csv'],
+)
+val_loader = DataLoader(
+    val_set,
+    batch_size=batch_size,
     num_workers=8,
     collate_fn=collate,
     drop_last=False,
@@ -67,8 +78,8 @@ dataloader = DataLoader(
 model = BasicModel()
 criterion = nn.MSELoss()
 
-# Training Function
 
+# Training Function
 @timer
 def train(epoch, loader, optimizer, metrics=[]):
 
@@ -94,14 +105,49 @@ def train(epoch, loader, optimizer, metrics=[]):
             loss_count += 1
 
         n_arrow = 50*(batch_idx+1)//n
-        progress = "Epoch {} [{}>{}] ({}/{}) loss : {:.4f}, avg_loss : {:.4f}".format(
+        progress = "Epoch {} (Training) [{}>{}] ({}/{}) loss : {:.4f}, avg_loss : {:.4f}".format(
             epoch, "="*n_arrow, "-"*(50-n_arrow), (batch_idx+1), n, loss.item(), tot_loss/loss_count
         )
         print(progress, end='\r')
 
-    print(loss_count)
+    print()
     logg = {
         'training_loss': tot_loss/loss_count,
+    }
+    return logg
+
+
+# Validation Function
+@timer
+def validate(epoch, loader, metrics=[]):
+
+    """
+        epoch : Epoch no
+        loader : Validation dataloader
+        metrics : metrics to log
+    """
+
+    n = len(loader)
+    tot_loss, loss_count = 0.0, 0
+
+    model.eval()
+    for batch_idx, (x, y) in enumerate(loader):
+        y_pred = model(x)
+        loss = criterion(y_pred, y)
+
+        if not math.isnan(loss.item()):
+            tot_loss += loss.item()
+            loss_count += 1
+
+        n_arrow = 50*(batch_idx+1)//n
+        progress = "Epoch {} (Validation) [{}>{}] ({}/{}) loss : {:.4f}, avg_loss : {:.4f}".format(
+            epoch, "="*n_arrow, "-"*(50-n_arrow), (batch_idx+1), n, loss.item(), tot_loss/loss_count
+        )
+        print(progress, end='\r')
+
+    print()
+    logg = {
+        'val_loss': tot_loss/loss_count,
     }
     return logg
 
@@ -142,9 +188,13 @@ def run():
     # Train & Validate over multiple epochs
     for epoch in range(1, n_epoch+1):
         logg = {}
-        logg_train = train(epoch, dataloader, optimizer, metrics=[])
+        
+        logg_train = train(epoch, train_loader, optimizer, metrics=[])
+        logg_val = validate(epoch, val_loader, metrics=[])
 
         logg.update(logg_train)
+        logg.update(logg_val)
+
         wandb.log(logg, step=epoch)
 
 
