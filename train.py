@@ -32,11 +32,13 @@ batch_size = int(configs['batch_size'])
 n_epoch = int(configs['n_epoch'])
 train_root = configs['train_root']
 val_root = configs['val_root']
+optimizer_ = configs['optimizer']
 learning_rate = float(configs['lr'])
 weight_decay = float(configs['weight_decay'])
 adam_eps = float(configs['adam_eps'])
 adam_amsgrad = bool(configs['adam_amsgrad'])
-
+CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
+ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
 
 # Set seed
 random.seed(random_seed)
@@ -61,18 +63,9 @@ dataloader = DataLoader(
     drop_last=False,
 )
 
-
-# Model, loss, optimizer
+# Model, loss
 model = BasicModel()
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(
-    model.parameters(),
-    lr=learning_rate,
-    weight_decay=weight_decay,
-    eps=adam_eps,
-    # amsgrad=adam_amsgrad
-)
-
 
 # Training Function
 
@@ -99,8 +92,6 @@ def train(epoch, loader, optimizer, metrics=[]):
         if not math.isnan(loss.item()):
             tot_loss += loss.item()
             loss_count += 1
-        # tot_loss += loss.item()
-        # loss_count += 1
 
         n_arrow = 50*(batch_idx+1)//n
         progress = "Epoch {} [{}>{}] ({}/{}) loss : {:.4f}, avg_loss : {:.4f}".format(
@@ -117,8 +108,44 @@ def train(epoch, loader, optimizer, metrics=[]):
 
 
 def run():
+
+    # Optimizer
+    if optimizer_=='adam':
+        optimizer = torch.optim.Adam(
+            model.parameters(),
+            lr=learning_rate,
+            weight_decay=weight_decay,
+            eps=adam_eps,
+            amsgrad=adam_amsgrad
+        )
+
+    # Initialize wandb
+    run_name = "train_{}".format(version)
+    wandb.init(name=run_name, project="DL Nanophotonics", dir='/content/wandb/')
+    wandb.watch(model, log='all')
+
+    config = wandb.config
+
+    config.version = version
+    config.batch_size = batch_size
+    config.n_epoch = n_epoch
+    config.train_root = train_root
+    config.val_root = val_root
+    config.optimizer = optimizer_
+    config.lr = learning_rate
+    config.weight_decay = weight_decay
+    config.adam_eps = adam_eps
+    config.amsgrad = adam_amsgrad
+    config.CHECKPOINT_DIR = CHECKPOINT_DIR
+    config.log_interval = 1
+
+    # Train & Validate over multiple epochs
     for epoch in range(1, n_epoch+1):
-        train(epoch, dataloader, optimizer)
+        logg = {}
+        logg_train = train(epoch, dataloader, optimizer, metrics=[])
+
+        logg.update(logg_train)
+        wandb.log(logg, step=epoch)
 
 
 if __name__=='__main__':
