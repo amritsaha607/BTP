@@ -165,6 +165,14 @@ def run():
             amsgrad=adam_amsgrad
         )
 
+    # Scheduler (optional)
+    scheduler = None
+    if 'scheduler' in configs:
+        sch_factor = configs['scheduler']
+        lr_lambda = lambda epoch: sch_factor**epoch
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+
+
     # Initialize wandb
     run_name = "train_{}".format(version)
     wandb.init(name=run_name, project="DL Nanophotonics", dir='/content/wandb/')
@@ -183,7 +191,9 @@ def run():
     config.adam_eps = adam_eps
     config.amsgrad = adam_amsgrad
     config.CHECKPOINT_DIR = CHECKPOINT_DIR
+    config.scheduler = sch_factor if scheduler is not None else None
     config.log_interval = 1
+    
 
     # Train & Validate over multiple epochs
     for epoch in range(1, n_epoch+1):
@@ -194,6 +204,9 @@ def run():
 
         logg.update(logg_train)
         logg.update(logg_val)
+
+        if scheduler:
+            scheduler.step()
 
         wandb.log(logg, step=epoch)
 
