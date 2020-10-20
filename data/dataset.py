@@ -26,7 +26,15 @@ class AreaDataset(Dataset):
    
     def __getitem__(self, index):
         file = self.files[index]
-        x, y = extractData(file)
+        x, y = extractData(
+            file, 
+            factors={
+                'r': 1e9,
+                'eps': 1,
+                'lambd': 1e9,
+                'A': 1e18
+            }
+        )
         return x, y
 
     def __len__(self):
