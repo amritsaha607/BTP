@@ -7,7 +7,7 @@ val_root: 'dataGeneration/data/val/'
 formats: ['.csv']
 
 optimizer: 'adam'
-lr: 1e-5
+lr: 1e-3
 weight_decay: 0
 adam_eps: 1e-8
 adam_amsgrad: True
