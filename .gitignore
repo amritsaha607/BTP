@@ -4,6 +4,10 @@ checkpoints/
 wandb/
 */wandb/*
 
+# Dataset
+dataGeneration/data/
+
+
 # Cache
 __pycache__/*
 .ipynb_checkpoints/*
