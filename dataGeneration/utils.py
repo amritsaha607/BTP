@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 from collections import defaultdict
@@ -97,6 +98,9 @@ def getArea(r, eps, lambd, write=None, f_out=None):
 
         if f_out==None:
             raise AssertionError("Please provide an export filename for writing data or set write to None")
+
+        if not os.path.exists(os.path.dirname(f_out)):
+            os.makedirs(os.path.dirname(f_out))
 
         # If write='all', put all variables in it
         if write=='all':
