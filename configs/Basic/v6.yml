@@ -1,0 +1,19 @@
+# v0 with learning rate scheduler
+
+random_seed: 0
+batch_size: 32
+n_epoch: 100
+
+train_root: 'dataGeneration/data/train/'
+val_root: 'dataGeneration/data/val/'
+formats: ['.csv']
+
+optimizer: 'adam'
+lr: 1e-5
+weight_decay: 0
+adam_eps: 1e-8
+adam_amsgrad: True
+
+CHECKPOINT_DIR: 'checkpoints/Basic/'
+
+scheduler: 0.99
