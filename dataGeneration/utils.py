@@ -1,6 +1,9 @@
 import numpy as np
-from utils.parameters import EPS_0
+import pandas as pd
+from collections import defaultdict
 
+from utils.parameters import EPS_0
+from utils.operations import makeList
 
 
 def getP(r1, r2):
@@ -60,7 +63,7 @@ def getAlpha(eps, r, baked=False):
     return alpha
 
 
-def getArea(r, eps, lambd):
+def getArea(r, eps, lambd, write=None, f_out=None):
     '''
         Returns area from radius & epsilon input
         Args: [All args are in SI unit]
@@ -72,6 +75,12 @@ def getArea(r, eps, lambd):
                 e2
                 e3
             lambd : wavelength
+            write : To write generated data or not
+                    None/False => don't write
+                    'all' => write all indermediate variables
+                    ['var1', 'var2', .....] => write only mentioned variables
+            f_out : write file name (with location)
+                    [only valid when write!=None and write!=False]
         Returns:
             area : float
     '''
@@ -83,6 +92,38 @@ def getArea(r, eps, lambd):
     
     # Absorption cross section
     area_abs = k * alpha.imag / EPS_0
+
+    if (write!=False) and (write is not None):
+
+        if f_out==None:
+            raise AssertionError("Please provide an export filename for writing data or set write to None")
+
+        # If write='all', put all variables in it
+        if write=='all':
+            write = ['alpha', 'A_sca', 'A_abs', 'A_tot']
+        
+        n = len(lambd)
+        data = {
+            'lambd': lambd,
+            'r1': makeList(r['r1'], n),
+            'r2': makeList(r['r2'], n),
+            'eps_1': makeList(eps['e1'], n),
+            'eps_2': makeList(eps['e2'], n),
+            'eps_3': makeList(eps['e3'], n),
+        }
+
+        for w in write:
+            if w=='alpha':
+                data[w] = alpha
+            elif w=='A_sca':
+                data[w] = area_sca
+            elif w=='A_abs':
+                data[w] = area_abs
+            elif w=='A_tot':
+                data[w] = area_sca + area_abs
+        
+        data = pd.DataFrame(data)
+        data.to_csv(f_out, index=False)
     
     return area_sca, area_abs
 
