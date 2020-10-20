@@ -10,7 +10,7 @@ def collate(data):
     """
     batch_size = len(data)
 
-    x = torch.tensor([data[i][0] for i in range(batch_size)])
-    y = torch.tensor([data[i][1] for i in range(batch_size)])
+    x = torch.tensor([data[i][0] for i in range(batch_size)], dtype=torch.float)
+    y = torch.tensor([data[i][1] for i in range(batch_size)], dtype=torch.float)
 
     return x, y
