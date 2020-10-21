@@ -44,11 +44,8 @@ ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
 random.seed(random_seed)
 np.random.seed(random_seed)
 torch.manual_seed(random_seed)
-try:
+if torch.cuda.is_available():
     torch.cuda.manual_seed(random_seed)
-except:
-    pass
-
 
 # Dataset
 train_set = AreaDataset(
@@ -77,7 +74,9 @@ val_loader = DataLoader(
 # Model, loss
 model = BasicModel()
 criterion = nn.MSELoss()
-
+if torch.cuda.is_available():
+    model.cuda()
+    criterion.cuda()
 
 # Training Function
 @timer
@@ -95,6 +94,11 @@ def train(epoch, loader, optimizer, metrics=[]):
 
     model.train()
     for batch_idx, (x, y) in enumerate(loader):
+
+        if torch.cuda.is_available():
+            x = x.cuda()
+            y = y.cuda()
+
         y_pred = model(x)
         loss = criterion(y_pred, y)
         loss.backward()
@@ -132,6 +136,11 @@ def validate(epoch, loader, metrics=[]):
 
     model.eval()
     for batch_idx, (x, y) in enumerate(loader):
+
+        if torch.cuda.is_available():
+            x = x.cuda()
+            y = y.cuda()
+
         y_pred = model(x)
         loss = criterion(y_pred, y)
 
@@ -172,7 +181,6 @@ def run():
         lr_lambda = lambda epoch: sch_factor**epoch
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
-
     # Initialize wandb
     run_name = "train_{}".format(version)
     wandb.init(name=run_name, project="DL Nanophotonics", dir='/content/wandb/')
@@ -192,6 +200,7 @@ def run():
     config.amsgrad = adam_amsgrad
     config.CHECKPOINT_DIR = CHECKPOINT_DIR
     config.scheduler = sch_factor if scheduler is not None else None
+    config.cuda = torch.cuda.is_available()
     config.log_interval = 1
     
 
