@@ -214,8 +214,9 @@ def run():
         logg.update(logg_train)
         logg.update(logg_val)
 
-        if scheduler:
+        if scheduler and epoch%10==0:
             scheduler.step()
+            print("\nepoch {}, lr : {}\n".format(epoch, [param_group['lr'] for param_group in optimizer.param_groups]))
 
         wandb.log(logg, step=epoch)
 
