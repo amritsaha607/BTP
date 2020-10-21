@@ -29,12 +29,12 @@ def extractData(filename, factors={'r': 1e9, 'eps': 1e7, 'lambd': 1e9, 'A': 1e17
     y = np.array([
         f_r*df['r1'][0],
         f_r*df['r2'][0],
-        f_eps*complex(df['eps_1'][0]).real,
-        f_eps*complex(df['eps_1'][0]).imag,
-        f_eps*complex(df['eps_2'][0]).real,
-        f_eps*complex(df['eps_2'][0]).imag,
-        f_eps*complex(df['eps_3'][0]).real,
-        f_eps*complex(df['eps_3'][0]).imag
+        # f_eps*complex(df['eps_1'][0]).real,
+        # f_eps*complex(df['eps_1'][0]).imag,
+        # f_eps*complex(df['eps_2'][0]).real,
+        # f_eps*complex(df['eps_2'][0]).imag,
+        # f_eps*complex(df['eps_3'][0]).real,
+        # f_eps*complex(df['eps_3'][0]).imag
     ])
 
     return x, y
