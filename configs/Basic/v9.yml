@@ -1,4 +1,4 @@
-# v2 with 0.9 lr scheduling
+# v1 with 0.9 lr scheduling
 
 random_seed: 0
 batch_size: 32
