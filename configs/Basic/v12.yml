@@ -1,4 +1,4 @@
-# v0 with learning rate scheduler
+# v0 with increased adam_eps
 
 random_seed: 0
 batch_size: 32
@@ -11,9 +11,7 @@ formats: ['.csv']
 optimizer: 'adam'
 lr: 1e-5
 weight_decay: 0
-adam_eps: 1e-8
+adam_eps: 1e-2
 adam_amsgrad: True
 
 CHECKPOINT_DIR: 'checkpoints/Basic/'
-
-scheduler: 0.99

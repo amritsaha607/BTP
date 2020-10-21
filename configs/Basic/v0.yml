@@ -1,6 +1,6 @@
 random_seed: 0
 batch_size: 32
-n_epoch: 100
+n_epoch: 1000
 
 train_root: 'dataGeneration/data/train/'
 val_root: 'dataGeneration/data/val/'
