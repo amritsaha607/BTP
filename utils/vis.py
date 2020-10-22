@@ -102,6 +102,7 @@ def plotArea(r, eps, lambd,
 
     if debug:
         plt.show()
-
-    plt.close()
-    return fig
+    
+    else:
+        plt.close()
+        return fig
