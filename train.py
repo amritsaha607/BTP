@@ -20,10 +20,12 @@ from utils.decorators import timer
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--version', type=str, default='v0', help='Version of experiment')
+parser.add_argument('--save', type=int, default=100, help='Version of experiment')
 args = parser.parse_args()
 
 
 version = args.version
+save = args.save
 cfg_path = os.path.join('configs/{}.yml'.format(version.replace('_', '/')))
 configs = yaml.safe_load(open(cfg_path))
 
@@ -39,6 +41,10 @@ adam_eps = float(configs['adam_eps'])
 adam_amsgrad = bool(configs['adam_amsgrad'])
 CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
 ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
+
+# Checkpoint Directory
+if not os.path.exists(ckpt_dir):
+    os.makedirs(ckpt_dir)
 
 # Set seed
 random.seed(random_seed)
@@ -219,6 +225,9 @@ def run():
             print("\nepoch {}, lr : {}\n".format(epoch, [param_group['lr'] for param_group in optimizer.param_groups]))
 
         wandb.log(logg, step=epoch)
+
+        if save and epoch%save==0:
+            torch.save(model.state_dict(), os.path.join(ckpt_dir, 'epoch_{}.pth'.format(epoch)))
 
 
 if __name__=='__main__':
