@@ -33,3 +33,35 @@ class Dense(nn.Module):
         if self.batch_norm:
             y = self.batch_norm(y)
         return y
+
+
+class DeepLayer(nn.Module):
+
+    """
+        Implements modulelist of Dense layers
+        Dense -> Dense -> Dense -> ...
+    """
+    def __init__(self, size=512, n_layers=5, d_factor=2, activation='relu', bn=False):
+        super(DeepLayer, self).__init__()
+
+        if not isinstance(d_factor, list):
+            d_factor = [d_factor]*n_layers
+
+        self.size = size
+        self.n_layers = n_layers
+        self.layers = []
+        for i in range(n_layers):
+            self.layers.append(Dense(size, size//d_factor[i], activation=activation, batch_norm=bn))
+            size = size//d_factor[i]
+        self.layers = nn.ModuleList(self.layers)
+        
+    def cuda():
+        super(DeepLayer, self).cuda()
+        for i in range(self.n_layers):
+            self.layers[i] = self.layers[i].cuda()
+
+    def forward(self, x):
+        y = x
+        for layer in self.layers:
+            y = layer(y)
+        return y
