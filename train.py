@@ -55,9 +55,11 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed(random_seed)
 
 # Dataset
+apply_factors = False
 train_set = AreaDataset(
     root=train_root,
     formats=['.csv'],
+    apply_factors=apply_factors,
 )
 train_loader = DataLoader(
     train_set,
@@ -69,6 +71,7 @@ train_loader = DataLoader(
 val_set = AreaDataset(
     root=val_root,
     formats=['.csv'],
+    apply_factors=apply_factors,
 )
 val_loader = DataLoader(
     val_set,
