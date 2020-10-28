@@ -26,7 +26,7 @@ def getEps(f_in='csv/Au.csv', f_out='csv/Au_updated.csv'):
     data.to_csv(f_out, index=False) 
     
 
-def getEpsInterpolated(f_in='csv/Au.csv', f_out='csv/Au_interpolated.csv', interval=1):
+def getEpsInterpolated(f_in='csv/Au.csv', f_out='csv/Au_interpolated.csv', range_='auto', interval=1):
     '''
         Takes input CSV file containing wavelength, n & k as columns
         Interpolated the data with interval of "interval" w.r.t. wavelength
@@ -39,8 +39,12 @@ def getEpsInterpolated(f_in='csv/Au.csv', f_out='csv/Au_interpolated.csv', inter
     data = defaultdict(list)
 
     wls, ns, ks = content['wl']*1e3, content['n'], content['k']
-    
-    wls_all = np.arange(wls.min(), wls.max(), 1.0)
+
+    if range_=='auto':
+        range_ = [wls.min(), wls.max()]
+
+    wls_all = np.arange(range_[0], range_[1], interval)
+    # wls_all = np.arange(wls.min(), wls.max(), interval)
     data['wl'] = wls_all
     data['n'] = np.interp(wls_all, wls, ns)
     data['k'] = np.interp(wls_all, wls, ks)
