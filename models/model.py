@@ -8,39 +8,42 @@ class BasicModel(nn.Module):
     def __init__(self, input_dim=98, out_dim=2):
         super(BasicModel, self).__init__()
 
-        self.size = 512
-        self.n_layers = 5
+        self.size = 1024
+        self.n_layers_1, self.n_layers_2 = 3, 5
 
-        # self.layers = [Dense(input_dim, self.size)]
-        # for i in range(self.n_layers):
-        #     self.layers.append(Dense(size, size//2))
-        #     size = size//2
-        
-        # self.layers = nn.ModuleList(self.layers)
+        size = self.size
 
         self.in_ = Dense(input_dim, self.size)
-        self.layer = DeepLayer(
-            size=self.size, 
-            n_layers=self.n_layers, 
+        
+        self.layer1 = DeepLayer(
+            size=size,
+            n_layers=self.n_layers_1,
+            d_factor=1,
+            activation='relu',
+            bn=False
+        )
+        self.layer2 = DeepLayer(
+            size=size,
+            n_layers=self.n_layers_2,
             d_factor=2,
             activation='relu',
             bn=False
         )
-        self.out = nn.Linear(self.size//2**self.n_layers, out_dim)
+
+        self.out = nn.Linear(size//(2**self.n_layers_2), out_dim)
 
     def cuda(self, *args, **kwargs):
         super(BasicModel, self).cuda()
-        self.layer = self.layer.cuda()
-
-        # for i in range(len(self.layers)):
-        #     self.layers[i] = self.layers[i].cuda()
+        # self.layer1 = self.layer1.cuda()
+        # self.layer2 = self.layer2.cuda()
 
     def forward(self, x):
-        # y = x
-        # for layer in self.layers:
-        #     y = layer(y)
 
         y = self.in_(x)
-        y = self.layer(y)
+        y = self.layer1(y)
+        y = self.layer2(y)
+        # y = self.layer1_1(y) + self.layer1_2(y)
+        # y = self.layer2_1(y) + self.layer2_2(y)
+        # y = self.layer(y)
         y = self.out(y)
         return y
