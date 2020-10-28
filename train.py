@@ -6,6 +6,7 @@ import wandb
 import random
 import math
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -77,8 +78,16 @@ val_loader = DataLoader(
     drop_last=False,
 )
 
+
+# Samples
+f = glob.glob(os.path.join(train_root, '*', '*.csv'))[0]
+n_samples = pd.read_csv(f).values.shape[0]
+
 # Model, loss
-model = BasicModel()
+model = BasicModel(
+    input_dim = n_samples,
+    out_dim = 6+2*n_samples
+)
 criterion = nn.MSELoss()
 if torch.cuda.is_available():
     model.cuda()
