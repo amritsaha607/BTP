@@ -22,19 +22,26 @@ def extractData(filename, factors={'r': 1e9, 'eps': 1e7, 'lambd': 1e9, 'A': 1e17
     # x = np.c_[df['lambd'], df['A_tot']]
 
     # Input data is a list of combined wavelength and area
+
+    # Sampled values of cross section at specified lambd interval
+    x = f_A*df['A_tot'].values
+
     # First all wavelength data followed by area data
-    x = np.concatenate([f_lambd*df['lambd'].values, f_A*df['A_tot'].values], axis=0)
+    # x = np.concatenate([f_lambd*df['lambd'].values, f_A*df['A_tot'].values], axis=0)
 
     # Output contains parameters like r1, r2, eps_1, eps_2 & eps_3
     y = np.array([
         f_r*df['r1'][0],
         f_r*df['r2'][0],
-        # f_eps*complex(df['eps_1'][0]).real,
-        # f_eps*complex(df['eps_1'][0]).imag,
-        # f_eps*complex(df['eps_2'][0]).real,
-        # f_eps*complex(df['eps_2'][0]).imag,
-        # f_eps*complex(df['eps_3'][0]).real,
-        # f_eps*complex(df['eps_3'][0]).imag
+        f_eps*complex(df['eps_1'][0]).real,
+        f_eps*complex(df['eps_1'][0]).imag,
+        f_eps*complex(df['eps_3'][0]).real,
+        f_eps*complex(df['eps_3'][0]).imag
     ])
+
+    mapping = np.vectorize(lambda t: complex(t.replace('i', 'j')))
+    eps_2 = df['eps_2'].values
+    eps_2 = mapping(eps_2)
+    y = np.concatenate([y, f_eps*(eps_2.real), f_eps*(eps_2.imag)], axis=0)
 
     return x, y
