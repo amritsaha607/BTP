@@ -98,7 +98,7 @@ if torch.cuda.is_available():
 
 # Training Function
 @timer
-def train(epoch, loader, optimizer, metrics=[]):
+def train(epoch, loader, optimizer, metrics=[], verbose=1):
 
     """
         epoch : Epoch no
@@ -126,11 +126,12 @@ def train(epoch, loader, optimizer, metrics=[]):
             tot_loss += loss.item()
             loss_count += 1
 
-        n_arrow = 50*(batch_idx+1)//n
-        progress = "Epoch {} (Training) [{}>{}] ({}/{}) loss : {:.4f}, avg_loss : {:.4f}".format(
-            epoch, "="*n_arrow, "-"*(50-n_arrow), (batch_idx+1), n, loss.item(), tot_loss/loss_count
-        )
-        print(progress, end='\r')
+        if verbose:
+            n_arrow = 50*(batch_idx+1)//n
+            progress = "Training - [{}>{}] ({}/{}) loss : {:.4f}, avg_loss : {:.4f}".format(
+                epoch, "="*n_arrow, "-"*(50-n_arrow), (batch_idx+1), n, loss.item(), tot_loss/loss_count
+            )
+            print(progress, end='\r')
 
     print()
     logg = {
@@ -141,7 +142,7 @@ def train(epoch, loader, optimizer, metrics=[]):
 
 # Validation Function
 @timer
-def validate(epoch, loader, metrics=[]):
+def validate(epoch, loader, metrics=[], verbose=1):
 
     """
         epoch : Epoch no
@@ -166,11 +167,12 @@ def validate(epoch, loader, metrics=[]):
             tot_loss += loss.item()
             loss_count += 1
 
-        n_arrow = 50*(batch_idx+1)//n
-        progress = "Epoch {} (Validation) [{}>{}] ({}/{}) loss : {:.4f}, avg_loss : {:.4f}".format(
-            epoch, "="*n_arrow, "-"*(50-n_arrow), (batch_idx+1), n, loss.item(), tot_loss/loss_count
-        )
-        print(progress, end='\r')
+        if verbose:
+            n_arrow = 50*(batch_idx+1)//n
+            progress = "Validation - [{}>{}] ({}/{}) loss : {:.4f}, avg_loss : {:.4f}".format(
+                epoch, "="*n_arrow, "-"*(50-n_arrow), (batch_idx+1), n, loss.item(), tot_loss/loss_count
+            )
+            print(progress, end='\r')
 
     print()
     logg = {
@@ -224,6 +226,9 @@ def run():
 
     # Train & Validate over multiple epochs
     for epoch in range(1, n_epoch+1):
+
+        print("Epoch {}".format(epoch))
+
         logg = {}
         
         logg_train = train(epoch, train_loader, optimizer, metrics=[])
