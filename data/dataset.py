@@ -24,7 +24,7 @@ class AreaDataset(Dataset):
         self.apply_factors = apply_factors
         for format_ in formats:
             self.files += glob.glob(os.path.join(root, '*', '*{}'.format(format_)))
-   
+    
     def __getitem__(self, index):
         file = self.files[index]
         x, y = extractData(
