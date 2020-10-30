@@ -129,7 +129,7 @@ def train(epoch, loader, optimizer, metrics=[], verbose=1):
         if verbose:
             n_arrow = 50*(batch_idx+1)//n
             progress = "Training - [{}>{}] ({}/{}) loss : {:.4f}, avg_loss : {:.4f}".format(
-                epoch, "="*n_arrow, "-"*(50-n_arrow), (batch_idx+1), n, loss.item(), tot_loss/loss_count
+                "="*n_arrow, "-"*(50-n_arrow), (batch_idx+1), n, loss.item(), tot_loss/loss_count
             )
             print(progress, end='\r')
 
@@ -170,7 +170,7 @@ def validate(epoch, loader, metrics=[], verbose=1):
         if verbose:
             n_arrow = 50*(batch_idx+1)//n
             progress = "Validation - [{}>{}] ({}/{}) loss : {:.4f}, avg_loss : {:.4f}".format(
-                epoch, "="*n_arrow, "-"*(50-n_arrow), (batch_idx+1), n, loss.item(), tot_loss/loss_count
+                "="*n_arrow, "-"*(50-n_arrow), (batch_idx+1), n, loss.item(), tot_loss/loss_count
             )
             print(progress, end='\r')
 
