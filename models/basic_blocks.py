@@ -51,8 +51,8 @@ class DeepLayer(nn.Module):
         self.n_layers = n_layers
         self.layers = []
         for i in range(n_layers):
-            self.layers.append(Dense(size, size//d_factor[i], activation=activation, batch_norm=bn))
-            size = size//d_factor[i]
+            self.layers.append(Dense(size, int(size//d_factor[i]), activation=activation, batch_norm=bn))
+            size = int(size//d_factor[i])
         self.layers = nn.ModuleList(self.layers)
         
     def cuda():
