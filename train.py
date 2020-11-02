@@ -12,9 +12,11 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from models.model import BasicModel
+from models.utils.loss import SeperateLoss
 from data.dataset import AreaDataset
 from data.collate import collate
 from utils.decorators import timer
+from utils.operations import dictAdd, dictMultiply
 
 
 # Add argument via parser
@@ -91,14 +93,16 @@ model = BasicModel(
     input_dim = n_samples,
     out_dim = 6+2*n_samples
 )
-criterion = nn.MSELoss()
+# criterion = nn.MSELoss()
+criterion = SeperateLoss()
 if torch.cuda.is_available():
     model.cuda()
     criterion.cuda()
 
 # Training Function
 @timer
-def train(epoch, loader, optimizer, metrics=[], verbose=1):
+def train(epoch, loader, optimizer, metrics=[], 
+            verbose=1, topups=['loss_split_re']):
 
     """
         epoch : Epoch no
@@ -109,6 +113,8 @@ def train(epoch, loader, optimizer, metrics=[], verbose=1):
 
     n = len(loader)
     tot_loss, loss_count = 0.0, 0
+    if 'loss_split_re' in topups:
+        tot_loss_split = None
 
     model.train()
     for batch_idx, (x, y) in enumerate(loader):
@@ -121,6 +127,10 @@ def train(epoch, loader, optimizer, metrics=[], verbose=1):
         loss = criterion(y_pred, y)
         loss.backward()
         optimizer.step()
+
+        if 'loss_split_re' in topups:
+            loss_split = criterion(y_pred, y, mode='split_re', run='train')
+            tot_loss_split = dictAdd([tot_loss_split, loss_split]) if tot_loss_split else loss_split
 
         if not math.isnan(loss.item()):
             tot_loss += loss.item()
@@ -137,12 +147,19 @@ def train(epoch, loader, optimizer, metrics=[], verbose=1):
     logg = {
         'training_loss': tot_loss/loss_count,
     }
+
+    if 'loss_split_re' in topups:
+        for key in tot_loss_split:
+            tot_loss_split[key] /= loss_count
+        logg.update(tot_loss_split)
+
     return logg
 
 
 # Validation Function
 @timer
-def validate(epoch, loader, metrics=[], verbose=1):
+def validate(epoch, loader, metrics=[], 
+            verbose=1, topups=['loss_split_re']):
 
     """
         epoch : Epoch no
@@ -152,6 +169,8 @@ def validate(epoch, loader, metrics=[], verbose=1):
 
     n = len(loader)
     tot_loss, loss_count = 0.0, 0
+    if 'loss_split_re' in topups:
+        tot_loss_split = None
 
     model.eval()
     for batch_idx, (x, y) in enumerate(loader):
@@ -162,6 +181,10 @@ def validate(epoch, loader, metrics=[], verbose=1):
 
         y_pred = model(x)
         loss = criterion(y_pred, y)
+
+        if 'loss_split_re' in topups:
+            loss_split = criterion(y_pred, y, mode='split_re', run='val')
+            tot_loss_split = dictAdd([tot_loss_split, loss_split]) if tot_loss_split else loss_split
 
         if not math.isnan(loss.item()):
             tot_loss += loss.item()
@@ -178,6 +201,12 @@ def validate(epoch, loader, metrics=[], verbose=1):
     logg = {
         'val_loss': tot_loss/loss_count,
     }
+
+    if 'loss_split_re' in topups:
+        for key in tot_loss_split:
+            tot_loss_split[key] /= loss_count
+        logg.update(tot_loss_split)
+
     return logg
 
 
@@ -231,8 +260,19 @@ def run():
 
         logg = {}
         
-        logg_train = train(epoch, train_loader, optimizer, metrics=[])
-        logg_val = validate(epoch, val_loader, metrics=[])
+        logg_train = train(
+            epoch,
+            train_loader,
+            optimizer,
+            metrics=[],
+            topups=['loss_split_re'],
+        )
+        logg_val = validate(
+            epoch,
+            val_loader,
+            metrics=[],
+            topups=['loss_split_re'],    
+        )
 
         logg.update(logg_train)
         logg.update(logg_val)
