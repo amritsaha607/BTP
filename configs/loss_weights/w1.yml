@@ -1,0 +1,10 @@
+# apply weights for radius
+
+r1: 1e18
+r2: 1e18
+e1_r: 1
+e1_i: 1
+e2_r: 1
+e2_i: 1
+e3_r: 1
+e3_i: 1

@@ -15,5 +15,6 @@ adam_eps: 1e-8
 adam_amsgrad: True
 
 CHECKPOINT_DIR: 'checkpoints/Basic/'
+LOSS_WEIGHT_DIR: 'configs/loss_weights/'
 
 scheduler: 0.99

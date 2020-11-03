@@ -15,6 +15,7 @@ from models.model import BasicModel
 from models.utils.loss import SeperateLoss
 from data.dataset import AreaDataset
 from data.collate import collate
+from utils.utils import getLossWeights
 from utils.decorators import timer
 from utils.operations import dictAdd, dictMultiply
 
@@ -44,6 +45,7 @@ adam_eps = float(configs['adam_eps'])
 adam_amsgrad = bool(configs['adam_amsgrad'])
 CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
 ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
+LOSS_WEIGHT_DIR = configs['LOSS_WEIGHT_DIR']
 
 # Checkpoint Directory
 if not os.path.exists(ckpt_dir):
@@ -93,8 +95,20 @@ model = BasicModel(
     input_dim = n_samples,
     out_dim = 6+2*n_samples
 )
-# criterion = nn.MSELoss()
 criterion = SeperateLoss()
+loss_mode, loss_split_mode = 'mse', 'split_re'
+loss_weights = None
+if 'loss_weight' in configs:
+    loss_mode = 'weighted'
+    loss_split_mode += '_weighted'
+    loss_weight_cfg = os.path.join(LOSS_WEIGHT_DIR, '{}.yml'.format(configs['loss_weight']))
+    loss_weight_cfg = yaml.safe_load(open(loss_weight_cfg))
+    loss_weight_cfg = {key: float(val) for key, val in loss_weight_cfg.items()}
+    loss_weights = getLossWeights(
+        weights_dict=loss_weight_cfg,
+        n=n_samples
+    )
+
 if torch.cuda.is_available():
     model.cuda()
     criterion.cuda()
@@ -124,12 +138,16 @@ def train(epoch, loader, optimizer, metrics=[],
             y = y.cuda()
 
         y_pred = model(x)
-        loss = criterion(y_pred, y)
+        loss = criterion(y_pred, y, mode=loss_mode, run='train', weights=loss_weights)
         loss.backward()
         optimizer.step()
 
         if 'loss_split_re' in topups:
-            loss_split = criterion(y_pred, y, mode='split_re', run='train')
+            loss_split = criterion(
+                y_pred, y, 
+                mode=loss_split_mode, run='train', 
+                weights=loss_weights
+            )
             tot_loss_split = dictAdd([tot_loss_split, loss_split]) if tot_loss_split else loss_split
 
         if not math.isnan(loss.item()):
@@ -180,10 +198,14 @@ def validate(epoch, loader, metrics=[],
             y = y.cuda()
 
         y_pred = model(x)
-        loss = criterion(y_pred, y)
+        loss = criterion(y_pred, y, mode=loss_mode, run='val', weights=loss_weights)
 
         if 'loss_split_re' in topups:
-            loss_split = criterion(y_pred, y, mode='split_re', run='val')
+            loss_split = criterion(
+                y_pred, y, 
+                mode=loss_split_mode, run='val',
+                weights=loss_weights
+            )
             tot_loss_split = dictAdd([tot_loss_split, loss_split]) if tot_loss_split else loss_split
 
         if not math.isnan(loss.item()):

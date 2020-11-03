@@ -1,3 +1,6 @@
+import numpy as np
+import torch
+
 def getPredictions(y):
 
     '''
@@ -24,3 +27,22 @@ def getPredictions(y):
         'e2_i': e2_i
     }
     return res
+
+def getLossWeights(weights_dict, n):
+    """
+        Get loss weights from loss_weights config dict
+        Args:
+            weights_dict : Contains weights of different parameters
+            n : number of samples
+    """
+
+    w = torch.ones(2*n+6,)
+    w[0] *= weights_dict['r1']
+    w[1] *= weights_dict['r2']
+    w[2] *= weights_dict['e1_r']
+    w[3] *= weights_dict['e1_i']
+    w[4] *= weights_dict['e3_r']
+    w[5] *= weights_dict['e3_i']
+    w[6:6+n] *= weights_dict['e2_r']
+    w[6+n:] *= weights_dict['e2_i']
+    return w

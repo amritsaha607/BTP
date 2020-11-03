@@ -1,4 +1,4 @@
-# v0 with increased adam_eps
+# v15 with weighted loss (w1) & lr_decay 0.99
 
 random_seed: 0
 batch_size: 32
@@ -11,8 +11,11 @@ formats: ['.csv']
 optimizer: 'adam'
 lr: 1e-5
 weight_decay: 0
-adam_eps: 1e-2
+adam_eps: 1e-8
 adam_amsgrad: True
 
 CHECKPOINT_DIR: 'checkpoints/Basic/'
 LOSS_WEIGHT_DIR: 'configs/loss_weights/'
+
+scheduler: 0.99
+loss_weight: 'w1'
