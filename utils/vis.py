@@ -1,7 +1,70 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 
 from dataGeneration.utils import getArea
+
+
+def plotArr(arr, debug=True,
+            size_=(8, 8), scatter=False, continuous=False):
+    """
+        Plot a list or 1d array
+    """
+
+    if isinstance(arr, list):
+        n = len(arr)
+    else:
+        n = arr.shape[0]
+    
+    if not debug:
+        fig = plt.figure(figsize=size_)
+    
+    x_range = np.arange(0, n, 1.0)
+    if scatter:
+        plt.scatter(x_range, arr)
+    if continuous:
+        plt.plot(x_range, arr)
+    
+    if not debug:
+        plt.close()
+        return fig
+    
+    plt.show()
+    
+
+def plotArrMulti(arr, labels='temp_label', debug=True,
+            size_=(8, 8), scatter=False, continuous=False):
+    """
+        Multiple plot of arrays in one plot
+    """
+
+    if isinstance(arr, list):
+        n = len(arr)
+    else:
+        n = arr.shape[0]
+
+    if isinstance(labels, str):
+        labels = [labels]*n
+
+    if not debug:
+        fig = plt.figure(figsize=size_)
+
+    for arr_, label in zip(arr, labels):
+        n = len(arr_) if isinstance(arr_, list) else arr_.shape[0]
+        x_range = np.arange(0, n, 1.0)
+        if scatter:
+            plt.scatter(x_range, arr_, label=label)
+        if continuous:
+            plt.plot(x_range, arr_, label=label)
+
+    plt.legend()
+    if not debug:
+        plt.close()
+        return fig
+
+    plt.show()
+    
+
 
 
 def plotCSV(f_name, debug=True, 

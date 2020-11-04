@@ -3,6 +3,7 @@ import torch
 import wandb
 import matplotlib.pyplot as plt
 
+from utils.vis import plotArrMulti
 from utils.utils import getLabel
 
 
@@ -48,8 +49,28 @@ def evaluate(model, loader,
     plt.scatter(y_pred_tot[:, 0], y_pred_tot[:, 1], label='Pred')
     plt.close()
 
-    logg = {
-        'fig': wandb.Image(fig),
-    }
+    r1s = [y_tot[:, 0], y_pred_tot[:, 1]]
+    r2s = [y_tot[:, 1], y_pred_tot[:, 1]]
+    # label_r1s = ['r1_gt', 'r1_pred']
+    # label_r2s = ['r2_gt', 'r2_pred']
+    # fig_r1 = plotArrMulti(r1s, labels=label_r1s, debug=False, scatter=True)
+    # fig_r2 = plotArrMulti(r2s, labels=label_r2s, debug=False, scatter=True)
 
-    return logg
+    # logg = {
+    #     'fig': wandb.Image(fig),
+    #     'fig_r1': wandb.Image(fig_r1),
+    #     'fig_r2': wandb.Image(fig_r2)
+    # }
+
+    loggs = []
+    n = len(r1s[0])
+    for i in range(n):
+        logg = {
+            'r1': r1s[0][i],
+            'r1_pred': r1s[1][i],
+            'r2': r2s[0][i],
+            'r2_pred': r2s[1][i]
+        }
+        loggs.append(logg)
+
+    return loggs

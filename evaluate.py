@@ -106,10 +106,11 @@ config.CHECKPOINT_DIR = CHECKPOINT_DIR
 config.cuda = torch.cuda.is_available()
 config.log_interval = 1
 
-logg = evaluate(
+loggs = evaluate(
     model,
     dataloader,
     mode=mode,
     verbose=verbose,
 )
-wandb.log(logg)
+for logg in loggs:
+    wandb.log(logg)
