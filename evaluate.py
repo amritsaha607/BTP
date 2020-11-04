@@ -44,7 +44,7 @@ configs = yaml.safe_load(open(cfg_path))
 
 random_seed = int(configs['random_seed'])
 batch_size = int(configs['batch_size'])
-data_root = configs['train_root']
+data_root = configs['val_root']
 CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
 ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
 ckpt = glob.glob(os.path.join(ckpt_dir, 'best*.pth'))
