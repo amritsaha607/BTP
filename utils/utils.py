@@ -1,6 +1,16 @@
 import numpy as np
 import torch
 
+def getLabel(y, mode='default'):
+    if mode=='default':
+        return y
+    elif mode=='r':
+        y = y[:, :2]
+        return y
+    else:
+        raise ValueError("Unknown mode {} found".format(mode))
+
+
 def getPredictions(y):
 
     '''

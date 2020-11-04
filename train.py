@@ -15,7 +15,7 @@ from models.model import BasicModel
 from models.utils.loss import SeperateLoss
 from data.dataset import AreaDataset
 from data.collate import collate
-from utils.utils import getLossWeights
+from utils.utils import getLossWeights, getLabel
 from utils.decorators import timer
 from utils.operations import dictAdd, dictMultiply
 
@@ -24,11 +24,23 @@ from utils.operations import dictAdd, dictMultiply
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--version', type=str, default='v0', help='Version of experiment')
+parser.add_argument('--verbose', type=int, default=1, help='To show training progress or not')
+parser.add_argument('--data_factors', type=str, default='f0', 
+    help='To spply factor in dataset')
+parser.add_argument(
+    '--mode', type=str, default='default', 
+    help="Mode selects which parameter to predict\
+        default - predict all\
+        r - predict r"
+)
 parser.add_argument('--save', type=int, default=100, help='Version of experiment')
 args = parser.parse_args()
 
 
 version = args.version
+verbose = args.verbose
+data_factors = args.data_factors
+mode = args.mode
 save = args.save
 cfg_path = os.path.join('configs/{}.yml'.format(version.replace('_', '/')))
 configs = yaml.safe_load(open(cfg_path))
@@ -59,11 +71,13 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed(random_seed)
 
 # Dataset
-apply_factors = False
+DATA_FACTOR_ROOT = 'configs/data_factors'
+data_factors = yaml.safe_load(open(os.path.join(DATA_FACTOR_ROOT, '{}.yml'.format(data_factors))))
+data_factors = {key: float(val) for key, val in data_factors.items()}
 train_set = AreaDataset(
     root=train_root,
     formats=['.csv'],
-    apply_factors=apply_factors,
+    factors=data_factors,
 )
 train_loader = DataLoader(
     train_set,
@@ -75,7 +89,7 @@ train_loader = DataLoader(
 val_set = AreaDataset(
     root=val_root,
     formats=['.csv'],
-    apply_factors=apply_factors,
+    factors=data_factors,
 )
 val_loader = DataLoader(
     val_set,
@@ -91,9 +105,14 @@ f = glob.glob(os.path.join(train_root, '*', '*.csv'))[0]
 n_samples = pd.read_csv(f).values.shape[0]
 
 # Model, loss
+if mode=='default':
+    model_out_dim = 6+2*n_samples
+elif mode=='r':
+    model_out_dim = 2
+
 model = BasicModel(
     input_dim = n_samples,
-    out_dim = 6+2*n_samples
+    out_dim = model_out_dim
 )
 criterion = SeperateLoss()
 loss_mode, loss_split_mode = 'mse', 'split_re'
@@ -125,6 +144,10 @@ def train(epoch, loader, optimizer, metrics=[],
         metrics : metrics to log
     """
 
+    if (mode=='r' or mode=='eps') and ('loss_split_re' in topups):
+        raise ValueError("You can't add {} topup in {} mode"
+            .format("loss_split_re", mode))
+
     n = len(loader)
     tot_loss, loss_count = 0.0, 0
     if 'loss_split_re' in topups:
@@ -132,6 +155,8 @@ def train(epoch, loader, optimizer, metrics=[],
 
     model.train()
     for batch_idx, (x, y) in enumerate(loader):
+
+        y = getLabel(y, mode=mode)
 
         if torch.cuda.is_available():
             x = x.cuda()
@@ -192,6 +217,8 @@ def validate(epoch, loader, metrics=[],
 
     model.eval()
     for batch_idx, (x, y) in enumerate(loader):
+
+        y = getLabel(y, mode=mode)
 
         if torch.cuda.is_available():
             x = x.cuda()
@@ -264,6 +291,7 @@ def run():
     config.n_epoch = n_epoch
     config.train_root = train_root
     config.val_root = val_root
+    config.data_factors = args.data_factors
     config.optimizer = optimizer_
     config.lr = learning_rate
     config.weight_decay = weight_decay
@@ -274,6 +302,8 @@ def run():
     config.cuda = torch.cuda.is_available()
     config.log_interval = 1
     
+    topups = []
+    # topups = ['loss_split_re']
 
     # Train & Validate over multiple epochs
     for epoch in range(1, n_epoch+1):
@@ -287,13 +317,15 @@ def run():
             train_loader,
             optimizer,
             metrics=[],
-            topups=['loss_split_re'],
+            topups=topups,
+            verbose=verbose
         )
         logg_val = validate(
             epoch,
             val_loader,
             metrics=[],
-            topups=['loss_split_re'],    
+            topups=topups,
+            verbose=verbose
         )
 
         logg.update(logg_train)
@@ -301,7 +333,8 @@ def run():
 
         if scheduler and epoch%10==0:
             scheduler.step()
-            print("\nepoch {}, lr : {}\n".format(epoch, [param_group['lr'] for param_group in optimizer.param_groups]))
+            print("\nepoch {}, lr : {}\n"
+                    .format(epoch, [param_group['lr'] for param_group in optimizer.param_groups]))
 
         wandb.log(logg, step=epoch)
 
