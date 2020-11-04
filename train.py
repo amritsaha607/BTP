@@ -302,6 +302,7 @@ def run():
     config.cuda = torch.cuda.is_available()
     config.log_interval = 1
     
+    BEST_LOSS = float('inf')
     topups = []
     # topups = ['loss_split_re']
 
@@ -338,8 +339,13 @@ def run():
 
         wandb.log(logg, step=epoch)
 
-        if save and epoch%save==0:
-            torch.save(model.state_dict(), os.path.join(ckpt_dir, 'epoch_{}.pth'.format(epoch)))
+        if save:
+            if logg['training_loss'] < BEST_LOSS:
+                BEST_LOSS = logg['training_loss']
+                os.system('rm {}'.format(os.path.join(ckpt_dir, 'best_*.pth')))
+                torch.save(model.state_dict(), os.path.join(ckpt_dir, 'best_{}.pth'.format(epoch)))
+            if epoch==n_epoch:
+                torch.save(model.state_dict(), os.path.join(ckpt_dir, 'latest_{}.pth'.format(epoch)))
 
 
 if __name__=='__main__':
