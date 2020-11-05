@@ -58,6 +58,7 @@ adam_amsgrad = bool(configs['adam_amsgrad'])
 CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
 ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
 LOSS_WEIGHT_DIR = configs['LOSS_WEIGHT_DIR']
+input_key = configs['input_key'] if 'input_key' in configs else 'A_tot'
 
 # Checkpoint Directory
 if not os.path.exists(ckpt_dir):
@@ -78,6 +79,7 @@ train_set = AreaDataset(
     root=train_root,
     formats=['.csv'],
     factors=data_factors,
+    input_key=input_key,
 )
 train_loader = DataLoader(
     train_set,
@@ -90,6 +92,7 @@ val_set = AreaDataset(
     root=val_root,
     formats=['.csv'],
     factors=data_factors,
+    input_key=input_key,
 )
 val_loader = DataLoader(
     val_set,

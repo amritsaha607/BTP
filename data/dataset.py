@@ -17,11 +17,12 @@ class AreaDataset(Dataset):
         and the parameters used for the same calculation
     """
 
-    def __init__(self, root='dataGeneration/data/', formats=['.csv'], factors=None):
+    def __init__(self, root='dataGeneration/data/', formats=['.csv'], factors=None, input_key='A_tot'):
         super(AreaDataset, self).__init__()
 
         self.files = []
         self.factors = factors
+        self.input_key = input_key
         for format_ in formats:
             self.files += glob.glob(os.path.join(root, '*', '*{}'.format(format_)))
     
@@ -29,6 +30,7 @@ class AreaDataset(Dataset):
         file = self.files[index]
         x, y = extractData(
             file, 
+            input_key=self.input_key,
             factors=self.factors
         )
         return x, y

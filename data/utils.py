@@ -3,7 +3,9 @@ import numpy as np
 import pandas as pd
 
 
-def extractData(filename, factors={'r': 1e9, 'eps': 1e7, 'lambd': 1e9, 'A': 1e17}):
+def extractData(filename, 
+            input_key='A_tot',
+            factors={'r': 1e9, 'eps': 1e7, 'lambd': 1e9, 'A': 1e17}):
     '''
         Extracts data from a csv file for training
         Args:
@@ -24,7 +26,7 @@ def extractData(filename, factors={'r': 1e9, 'eps': 1e7, 'lambd': 1e9, 'A': 1e17
     # Input data is a list of combined wavelength and area
 
     # Sampled values of cross section at specified lambd interval
-    x = f_A*df['A_tot'].values
+    x = f_A*df[input_key].values
 
     # First all wavelength data followed by area data
     # x = np.concatenate([f_lambd*df['lambd'].values, f_A*df['A_tot'].values], axis=0)
