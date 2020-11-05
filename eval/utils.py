@@ -49,7 +49,7 @@ def evaluate(model, loader,
     plt.scatter(y_pred_tot[:, 0], y_pred_tot[:, 1], label='Pred')
     plt.close()
 
-    r1s = [y_tot[:, 0], y_pred_tot[:, 1]]
+    r1s = [y_tot[:, 0], y_pred_tot[:, 0]]
     r2s = [y_tot[:, 1], y_pred_tot[:, 1]]
     # label_r1s = ['r1_gt', 'r1_pred']
     # label_r2s = ['r2_gt', 'r2_pred']
