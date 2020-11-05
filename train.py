@@ -61,7 +61,7 @@ LOSS_WEIGHT_DIR = configs['LOSS_WEIGHT_DIR']
 input_key = configs['input_key'] if 'input_key' in configs else 'A_tot'
 
 # Checkpoint Directory
-if not os.path.exists(ckpt_dir):
+if save and (not os.path.exists(ckpt_dir)):
     os.makedirs(ckpt_dir)
 
 # Set seed
