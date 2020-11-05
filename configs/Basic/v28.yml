@@ -1,4 +1,4 @@
-# v7 with weight_decay 1e-4
+# v7 with weight_decay 1e-3
 
 random_seed: 0
 batch_size: 32
@@ -10,7 +10,7 @@ formats: ['.csv']
 
 optimizer: 'adam'
 lr: 1e-5
-weight_decay: 1e-4
+weight_decay: 1e-3
 adam_eps: 1e-8
 adam_amsgrad: True
 
