@@ -1,0 +1,22 @@
+# v31 with lr_decay 0.95
+
+random_seed: 0
+batch_size: 32
+n_epoch: 1000
+
+train_root: 'dataGeneration/data/train/'
+val_root: 'dataGeneration/data/val/'
+formats: ['.csv']
+
+optimizer: 'adam'
+lr: 1e-5
+weight_decay: 0
+adam_eps: 1e-8
+adam_amsgrad: True
+
+input_key: 'A_abs'
+
+CHECKPOINT_DIR: 'checkpoints/Basic/'
+LOSS_WEIGHT_DIR: 'configs/loss_weights/'
+
+scheduler: 0.95
