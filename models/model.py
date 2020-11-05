@@ -9,7 +9,8 @@ class BasicModel(nn.Module):
         super(BasicModel, self).__init__()
 
         self.size = 1024
-        self.n_layers_1, self.n_layers_2 = 5, 5
+        self.n_layers_1, self.n_layers_2, self.n_layers_3 = 3, 10, 3
+        self.d_factor_1, self.d_factor_2, self.d_factor_3 = 2, 1, 1/2
 
         size = self.size
 
@@ -18,20 +19,29 @@ class BasicModel(nn.Module):
         self.layer1 = DeepLayer(
             size=size,
             n_layers=self.n_layers_1,
-            d_factor=2,
+            d_factor=self.d_factor_1,
             activation='relu',
             bn=False
         )
-
-        size = size//(2**self.n_layers_1)
+        size = int(size//(self.d_factor_1**self.n_layers_1))
+        
         self.layer2 = DeepLayer(
             size=size,
             n_layers=self.n_layers_2,
-            d_factor=1/2,
+            d_factor=self.d_factor_2,
             activation='relu',
             bn=False
         )
-        size = int(size//((1/2)**self.n_layers_2))
+        size = int(size//(self.d_factor_2**self.n_layers_2))
+
+        self.layer3 = DeepLayer(
+            size=size,
+            n_layers=self.n_layers_3,
+            d_factor=self.d_factor_3,
+            activation='relu',
+            bn=False
+        )
+        size = int(size//(self.d_factor_3**self.n_layers_3))
 
         self.out = nn.Linear(size, out_dim)
 
@@ -42,5 +52,6 @@ class BasicModel(nn.Module):
         y = self.in_(x)
         y = self.layer1(y)
         y = self.layer2(y)
+        y = self.layer3(y)
         y = self.out(y)
         return y
