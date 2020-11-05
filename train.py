@@ -343,8 +343,8 @@ def run():
         wandb.log(logg, step=epoch)
 
         if save:
-            if logg['training_loss'] < BEST_LOSS:
-                BEST_LOSS = logg['training_loss']
+            if logg['val_loss'] < BEST_LOSS:
+                BEST_LOSS = logg['val_loss']
                 os.system('rm {}'.format(os.path.join(ckpt_dir, 'best_*.pth')))
                 torch.save(model.state_dict(), os.path.join(ckpt_dir, 'best_{}.pth'.format(epoch)))
             if epoch==n_epoch:
