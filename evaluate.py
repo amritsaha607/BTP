@@ -111,6 +111,7 @@ loggs = evaluate(
     dataloader,
     mode=mode,
     verbose=verbose,
+    err_acc_meters=[1, 5, 10, 20, 50, 100]
 )
 for logg in loggs:
     wandb.log(logg)
