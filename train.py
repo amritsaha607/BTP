@@ -24,6 +24,7 @@ from utils.operations import dictAdd, dictMultiply
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--version', type=str, default='v0', help='Version of experiment')
+parser.add_argument('--model', type=int, default=0, help='Model ID')
 parser.add_argument('--verbose', type=int, default=1, help='To show training progress or not')
 parser.add_argument('--data_factors', type=str, default='f0', 
     help='To spply factor in dataset')
@@ -39,6 +40,7 @@ args = parser.parse_args()
 
 version = args.version
 verbose = args.verbose
+model_ID = args.model
 data_factors = args.data_factors
 mode = args.mode
 save = args.save
@@ -56,7 +58,8 @@ weight_decay = float(configs['weight_decay'])
 adam_eps = float(configs['adam_eps'])
 adam_amsgrad = bool(configs['adam_amsgrad'])
 CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
-ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
+# ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
+ckpt_dir = os.path.join('checkpoints', version.split('_')[0], str(model_ID), version.split('_')[1])
 LOSS_WEIGHT_DIR = configs['LOSS_WEIGHT_DIR']
 input_key = configs['input_key'] if 'input_key' in configs else 'A_tot'
 
@@ -115,7 +118,8 @@ elif mode=='r':
 
 model = BasicModel(
     input_dim = n_samples,
-    out_dim = model_out_dim
+    out_dim = model_out_dim,
+    model_id=model_ID,
 )
 criterion = SeperateLoss()
 loss_mode, loss_split_mode = 'mse', 'split_re'
@@ -290,6 +294,7 @@ def run():
     config = wandb.config
 
     config.version = version
+    config.model_ID = model_ID
     config.batch_size = batch_size
     config.n_epoch = n_epoch
     config.train_root = train_root
