@@ -24,6 +24,7 @@ from eval.utils import evaluate
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--version', type=str, default='v0', help='Version of model to evaluate')
+parser.add_argument('--model', type=int, default=0, help='Model ID')
 parser.add_argument('--verbose', type=int, default=1, help='To show evaluation progress or not')
 parser.add_argument('--data_factors', type=str, default='f0', 
     help='To spply factor in dataset')
@@ -36,6 +37,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 version = args.version
+model_ID = args.model
 verbose = args.verbose
 data_factors = args.data_factors
 mode = args.mode
@@ -46,7 +48,8 @@ random_seed = int(configs['random_seed'])
 batch_size = int(configs['batch_size'])
 data_root = configs['val_root']
 CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
-ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
+# ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
+ckpt_dir = os.path.join('checkpoints', version.split('_')[0], str(model_ID), version.split('_')[1])
 ckpt = glob.glob(os.path.join(ckpt_dir, 'best*.pth'))
 if len(ckpt)==0:
     raise ValueError("No checkpoint found in location {}".format(os.path.join(ckpt_dir, 'best*.pth')))
@@ -87,7 +90,8 @@ elif mode=='r':
 
 model = BasicModel(
     input_dim = n_samples,
-    out_dim = model_out_dim
+    out_dim = model_out_dim,
+    model_id=model_ID,
 )
 if torch.cuda.is_available():
     model.cuda()
@@ -100,6 +104,7 @@ wandb.init(name=run_name, project="DL Nanophotonics", dir='/content/wandb/')
 config = wandb.config
 
 config.version = version
+config.model_ID = model_ID
 config.batch_size = batch_size
 config.data_factors = args.data_factors
 config.CHECKPOINT_DIR = CHECKPOINT_DIR
