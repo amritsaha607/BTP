@@ -9,7 +9,8 @@ from eval.metrics import ErrAcc
 
 def evaluate(model, loader, 
                 mode='default', verbose=1,
-                err_acc_meters=[1, 5, 10]):
+                rel_err_acc_meters=[1, 5, 10],
+                abs_err_acc_meters=[1, 5, 10]):
 
     """
         Evaluate model on dataset
@@ -75,10 +76,41 @@ def evaluate(model, loader,
         loggs.append(logg)
 
     err_acc = {}
-    err_acc_r1 = ErrAcc(r1s[0], r1s[1], err=err_acc_meters, keyPrefix='r1')
-    err_acc_r2 = ErrAcc(r2s[0], r2s[1], err=err_acc_meters, keyPrefix='r2')
-    err_acc.update(err_acc_r1)
-    err_acc.update(err_acc_r2)
+    rel_err_acc_r1 = ErrAcc(
+        r1s[0],
+        r1s[1],
+        err=rel_err_acc_meters,
+        err_mode='rel',
+        keyPrefix='r1'
+    )
+    rel_err_acc_r2 = ErrAcc(
+        r2s[0],
+        r2s[1],
+        err=rel_err_acc_meters,
+        err_mode='rel',
+        keyPrefix='r2'
+    )
+    abs_err_acc_r1 = ErrAcc(
+        r1s[0],
+        r1s[1],
+        err=abs_err_acc_meters,
+        err_mode='abs',
+        keyPrefix='r1',
+        data_factor=100
+    )
+    abs_err_acc_r2 = ErrAcc(
+        r2s[0],
+        r2s[1],
+        err=abs_err_acc_meters,
+        err_mode='abs',
+        keyPrefix='r2',
+        data_factor=100
+    )
+    
+    err_acc.update(rel_err_acc_r1)
+    err_acc.update(rel_err_acc_r2)
+    err_acc.update(abs_err_acc_r1)
+    err_acc.update(abs_err_acc_r2)
 
     loggs.append(err_acc)
 
