@@ -12,7 +12,7 @@ def makeList(x, n):
             List object
     '''
 
-    if isinstance(x, (int, float)):
+    if isinstance(x, (int, float, str, bool)):
         x = [x]*n
 
     elif isinstance(x, list):

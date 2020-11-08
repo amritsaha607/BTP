@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from utils.operations import makeList
+
 
 class Dense(nn.Module):
     """
@@ -64,4 +66,64 @@ class DeepLayer(nn.Module):
         y = x
         for layer in self.layers:
             y = layer(y)
+        return y
+
+
+class InceptionLayer(nn.Module):
+
+    """
+        Implements Inception Layer
+        Args:
+            n_branches : No of parallel branches
+            size : Input size
+            n_layers : (list / int) contains no of layers for each branch
+            d_factors : (list / int) contains d_factor for each branch
+            activations : (list / int) contains activations for each branch
+            bns : (list / int) contains batch_norm for each branch
+            out : 
+                'add' / 'sum' => add all the final outputs
+                'cat' => concatenate all the final outputs
+    """
+    def __init__(self, n_branches, size, n_layers, d_factors, 
+                activations='relu', bns=False,
+                out='add'):
+
+        super(InceptionLayer, self).__init__()
+
+        self.n_branches = n_branches
+        self.size = size
+        self.n_layers = makeList(n_layers, n_branches)
+        self.d_factors = makeList(d_factors, n_branches)
+        self.activations = makeList(activations, n_branches)
+        self.bns = makeList(bns, n_branches)
+        self.out = out
+
+        self.branches = []
+
+        for branch_idx, (d_factor, activation, bn) in enumerate(zip(self.d_factors, self.activations, self.bns)):
+            branch_layers, size = [], self.size
+            for i in range(self.n_layers[branch_idx]):
+                branch_layers.append(Dense(size, int(size//d_factor), activation=activation, batch_norm=bn))
+                size = int(size//d_factor)
+            self.branches.append(nn.ModuleList(branch_layers))
+
+        for branch_idx, branch in enumerate(self.branches):
+            self.add_module(str(branch_idx), branch)
+
+    def cuda():
+        super(DeepLayer, self).cuda()
+        for i in range(self.branches):
+            self.branches[i] = self.branches[i].cuda()
+
+    def forward(self, x):
+        y = []
+        for branch in self.branches:
+            y_ = branch(x)
+            y.append(y_)
+
+        if self.out=='add' or self.out=='sum':
+            y = sum(y)
+        else:
+            y = torch.cat(y, dim=0)
+        
         return y
