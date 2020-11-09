@@ -250,6 +250,31 @@ class BasicModel(nn.Module):
 
             self.out = nn.Linear(size, out_dim)
 
+        elif model_id==11:
+            self.size = 1024
+            self.n_layers = [4, 20, 4]
+            self.d_factors = [2, 1, 1/2]
+
+            size = self.size
+
+            self.in_ = Dense(input_dim, self.size)
+
+            self.layers = []
+            for layer_idx, (n_layer, d_factor) in enumerate(zip(self.n_layers, self.d_factors)):
+                self.layers.append(
+                    DeepLayer(
+                        size=size,
+                        n_layers=n_layer,
+                        d_factor=d_factor,
+                        activation='relu',
+                        bn=False
+                    )
+                )
+                size = int(size // (d_factor**n_layer))
+                self.add_module(str(layer_idx), self.layers[layer_idx])
+
+            self.out = nn.Linear(size, out_dim)
+
 
     def cuda(self, *args, **kwargs):
         super(BasicModel, self).cuda()
@@ -262,7 +287,7 @@ class BasicModel(nn.Module):
             y = self.layer2(y)
             y = self.layer3(y)
             y = self.out(y)
-        
+
         elif self.model_id==8:
             y = self.in_(x)
             y = self.layer1(y)
@@ -296,6 +321,12 @@ class BasicModel(nn.Module):
             # Final Layer
             y = y_l + y_r
             y = self.layer3(y)
+            y = self.out(y)
+
+        elif self.model_id==11:
+            y = self.in_(x)
+            for layer in self.layers:
+                y = layer(y)
             y = self.out(y)
 
         return y
