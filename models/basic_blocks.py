@@ -69,6 +69,62 @@ class DeepLayer(nn.Module):
         return y
 
 
+class CascadedDeep(nn.Module):
+    """
+        Implements cascaded deep layer
+        Deep -> Deep -> Deep -> ...... -> Deep
+    """
+    def __init__(self, size, n_layers, d_factors,
+                    activations='relu', bns=False):
+        super(CascadedDeep, self).__init__()
+
+        if not isinstance(activations, list):
+            activations = [activations] * len(n_layers)
+        if not isinstance(bns, list):
+            bns = [bns] * len(n_layers)
+
+        self.size, self.ret_size = size, size
+        self.n_layers = n_layers
+        self.d_factors = d_factors
+        self.activations = activations
+        self.bns = bns
+
+        self.layers = []
+
+        for layer_idx, (n_layer, d_factor, activation, bn) in \
+            enumerate(zip(n_layers, d_factors, activations, bns)):
+
+            layer = DeepLayer(
+                size=size,
+                n_layers=n_layer,
+                d_factor=d_factor,
+                activation=activation,
+                bn=bn
+            )
+            self.layers.append(layer)
+            self.add_module(
+                "deeplayer_{}".format(layer_idx+1),
+                layer
+            )
+
+            size = int(size // (d_factor ** n_layer))
+
+        self.ret_size = size
+
+    def cuda(self):
+        super(CascadedDeep, self).cuda()
+        self.layers = self.layers.cuda()
+
+    def forward(self, x):
+        y = x
+        for layer in self.layers:
+            y = layer(y)
+        return y
+
+    def outSize(self):
+        return self.ret_size
+
+
 class InceptionLayer(nn.Module):
 
     """
