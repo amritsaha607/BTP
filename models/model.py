@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from models.basic_blocks import Dense, DeepLayer
+from models.basic_blocks import Dense, DeepLayer, InceptionLayer, CascadedDeep
 
 
 class BasicModel(nn.Module):
@@ -275,6 +275,25 @@ class BasicModel(nn.Module):
 
             self.out = nn.Linear(size, out_dim)
 
+        elif model_id==12:
+            self.size = 1024
+            self.n_layers = [3, 40, 3]
+            self.d_factors = [2, 1, 1/2]
+
+            size = self.size
+
+            self.in_ = Dense(input_dim, self.size)
+
+            self.cascade = CascadedDeep(
+                size=self.size,
+                n_layers=self.n_layers,
+                d_factors=self.d_factors,
+                activations='relu',
+                bns=False,
+            )
+            size = self.cascade.outSize()
+
+            self.out = nn.Linear(size, out_dim)
 
     def cuda(self, *args, **kwargs):
         super(BasicModel, self).cuda()
@@ -328,5 +347,10 @@ class BasicModel(nn.Module):
             for layer in self.layers:
                 y = layer(y)
             y = self.out(y)
+
+        elif self.model_id==12:
+            y = self.in_(x)
+            y = self.cascade(y)
+            y = self.out(y) 
 
         return y
