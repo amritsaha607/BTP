@@ -157,11 +157,16 @@ def plotArea(r, eps, lambd,
                 raise ValueError("Unknown figure format '{}' found".format(figs[row]))
 
             ax_.set_xlabel("Wavelength (nm)")
-            ax_.set_ylabel("{} Area (m2)".format(figs[row]))
+            ax_.set_ylabel("Cross Section (m2)")
             ax_.legend()
 
             if overlay:
-                ax_.set_title(figs[row])
+                title_ = 'Total Cross Section'
+                if figs[row]=='abs':
+                    title_ = 'Absorption Cross Section'
+                elif figs[row]=='sca':
+                    title_ = 'Scattering Cross Section'
+                ax_.set_title(title_)
 
     if debug:
         plt.show()
