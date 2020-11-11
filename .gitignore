@@ -8,6 +8,7 @@ wandb/
 # Dataset
 dataGeneration/data/
 dataGeneration/data_prev/
+dataGeneration/mass_data/
 
 
 # Cache
