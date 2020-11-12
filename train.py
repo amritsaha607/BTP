@@ -24,6 +24,15 @@ from utils.operations import dictAdd, dictMultiply
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--version', type=str, default='v0', help='Version of experiment')
+parser.add_argument('--cont', type=int, default=None, help='To continue training from a specific epoch, \
+        put the last epoch you have trained last time \
+        e.g. if you have trained till epoch 50 and want to continue from 51, put 50 here, not 51')
+parser.add_argument('--wid', type=str, default=None, help='For continuing runs, provide the id of wandb run')
+parser.add_argument(
+    '--BEST_VAL_LOSS', 
+    type=float, default=None, 
+    help="For continuing runs, provide the best validation loss that you've got till now",
+)
 parser.add_argument('--model', type=int, default=0, help='Model ID')
 parser.add_argument('--verbose', type=int, default=1, help='To show training progress or not')
 parser.add_argument('--data_factors', type=str, default='f0', 
@@ -39,6 +48,8 @@ args = parser.parse_args()
 
 
 version = args.version
+cont = args.cont
+wid = args.wid
 verbose = args.verbose
 model_ID = args.model
 data_factors = args.data_factors
@@ -62,6 +73,9 @@ CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
 ckpt_dir = os.path.join('checkpoints', version.split('_')[0], str(model_ID), version.split('_')[1])
 LOSS_WEIGHT_DIR = configs['LOSS_WEIGHT_DIR']
 input_key = configs['input_key'] if 'input_key' in configs else 'A_tot'
+
+WANDB_PROJECT_NAME = 'DL Nanophotonics'
+WANDB_PROJECT_DIR = '/content/wandb/'
 
 # Checkpoint Directory
 if save and (not os.path.exists(ckpt_dir)):
@@ -134,6 +148,11 @@ if 'loss_weight' in configs:
         weights_dict=loss_weight_cfg,
         n=n_samples
     )
+
+if cont is not None:
+    cont = int(cont)
+    latest_ckpt = os.path.join(ckpt_dir, 'latest_{}.pth'.format(cont))
+    model.load_state_dict(torch.load(latest_ckpt))
 
 if torch.cuda.is_available():
     model.cuda()
@@ -288,7 +307,13 @@ def run():
 
     # Initialize wandb
     run_name = "train_{}".format(version)
-    wandb.init(name=run_name, project="DL Nanophotonics", dir='/content/wandb/')
+    if args.cont is not None:
+        wandb.init(id=args.wid, name=run_name, 
+            project=WANDB_PROJECT_NAME, dir=WANDB_PROJECT_DIR, resume=True)
+    else:
+        wandb.init(name=run_name, 
+            project=WANDB_PROJECT_NAME, dir=WANDB_PROJECT_DIR)
+
     wandb.watch(model, log='all')
 
     config = wandb.config
@@ -311,16 +336,26 @@ def run():
     config.log_interval = 1
     
     BEST_LOSS = float('inf')
+
+    if cont:
+        BEST_LOSS = float(args.BEST_VAL_LOSS) if args.BEST_VAL_LOSS is not None else float('inf')
+        if scheduler:
+            print("Setting up scheduler to continuing state...\n")
+            for epoch in range(1, cont+1):
+                if epoch%10==0:
+                    scheduler.step()
+
     topups = []
     # topups = ['loss_split_re']
 
     # Train & Validate over multiple epochs
-    for epoch in range(1, n_epoch+1):
+    start_epoch = cont+1 if cont is not None else 1
+    for epoch in range(start_epoch, n_epoch+1):
 
         print("Epoch {}".format(epoch))
 
         logg = {}
-        
+
         logg_train = train(
             epoch,
             train_loader,
@@ -352,8 +387,9 @@ def run():
                 BEST_LOSS = logg['val_loss']
                 os.system('rm {}'.format(os.path.join(ckpt_dir, 'best_*.pth')))
                 torch.save(model.state_dict(), os.path.join(ckpt_dir, 'best_{}.pth'.format(epoch)))
-            if epoch==n_epoch:
-                torch.save(model.state_dict(), os.path.join(ckpt_dir, 'latest_{}.pth'.format(epoch)))
+            # if epoch==n_epoch:
+            os.system('rm {}'.format(os.path.join(ckpt_dir, 'latest_*.pth')))
+            torch.save(model.state_dict(), os.path.join(ckpt_dir, 'latest_{}.pth'.format(epoch)))
 
 
 if __name__=='__main__':
