@@ -117,7 +117,7 @@ loggs = evaluate(
     mode=mode,
     verbose=verbose,
     rel_err_acc_meters=[1, 5, 10, 20, 50, 100],
-    abs_err_acc_meters=[1, 2, 3, 4, 5, 8, 10, 25]
+    abs_err_acc_meters=[0.2, 0.5, 1, 2, 3, 5, 10, 25]
 )
 for logg in loggs:
     wandb.log(logg)
