@@ -96,7 +96,7 @@ def plotCSV(f_name, debug=True,
 
 def plotArea(r, eps, lambd,
     figs=['sca', 'abs', 'tot'], overlay=False, label_mode=['r1', 'r2'],
-    size='auto', debug=True):
+    size='auto', debug=True, title='auto'):
 
     """
         Function to plot area w.r.t. varying wavelength for different parameters
@@ -160,13 +160,15 @@ def plotArea(r, eps, lambd,
             ax_.set_ylabel("Cross Section (m2)")
             ax_.legend()
 
-            if overlay:
+            title_ = title
+            if overlay and title=='auto':
                 title_ = 'Total Cross Section'
                 if figs[row]=='abs':
                     title_ = 'Absorption Cross Section'
                 elif figs[row]=='sca':
                     title_ = 'Scattering Cross Section'
-                ax_.set_title(title_)
+
+            ax_.set_title(title_)
 
     if debug:
         plt.show()
