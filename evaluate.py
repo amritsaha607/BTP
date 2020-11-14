@@ -54,6 +54,7 @@ ckpt = glob.glob(os.path.join(ckpt_dir, 'best*.pth'))
 if len(ckpt)==0:
     raise ValueError("No checkpoint found in location {}".format(os.path.join(ckpt_dir, 'best*.pth')))
 ckpt = ckpt[0]
+input_key = configs['input_key'] if 'input_key' in configs else 'A_tot'
 
 # Set random seeds
 random.seed(random_seed)
@@ -69,6 +70,7 @@ dataset = AreaDataset(
     root=data_root,
     formats=['.csv'],
     factors=data_factors,
+    input_key=input_key,
 )
 dataloader = DataLoader(
     dataset,
@@ -93,10 +95,9 @@ model = BasicModel(
     out_dim = model_out_dim,
     model_id=model_ID,
 )
+model.load_state_dict(torch.load(ckpt, map_location=torch.device('cpu')))
 if torch.cuda.is_available():
     model.cuda()
-model.load_state_dict(torch.load(ckpt))
-
 
 run_name = "eval_{}".format(version)
 wandb.init(name=run_name, project="DL Nanophotonics", dir='/content/wandb/')
