@@ -360,6 +360,44 @@ class BasicModel(nn.Module):
 
             self.out = nn.Linear(size, out_dim)
 
+        elif model_id==14:
+            self.size = 1024
+            self.n_layers_l, self.n_layers_r = [3, 5, 5, 5, 5, 3], [2, 5, 5, 5, 5, 2]
+            self.d_factors = [2, 1, 1, 1, 1, 1/2]
+
+            lsize, rsize = self.size, self.size
+            self.layers_l, self.layers_r = [], []
+
+            self.in_ = Dense(input_dim, self.size)
+
+            for layer_idx, (n_layer, d_factor) in enumerate(zip(self.n_layers_l, self.d_factors)):
+                self.layers_l.append(
+                    DeepLayer(
+                        size=lsize,
+                        n_layers=n_layer,
+                        d_factor=d_factor,
+                        activation='relu',
+                        bn=False
+                    )
+                )
+                lsize = int(lsize // (d_factor**n_layer))
+                self.add_module('left_layer_{}'.format(layer_idx), self.layers_l[-1])
+            
+            for layer_idx, (n_layer, d_factor) in enumerate(zip(self.n_layers_r, self.d_factors)):
+                self.layers_r.append(
+                    DeepLayer(
+                        size=rsize,
+                        n_layers=n_layer,
+                        d_factor=d_factor,
+                        activation='relu',
+                        bn=False
+                    )
+                )
+                rsize = int(rsize // (d_factor**n_layer))
+                self.add_module('right_layer_{}'.format(layer_idx), self.layers_r[-1])
+            
+            self.out = nn.Linear(lsize, out_dim)
+
     def cuda(self, *args, **kwargs):
         super(BasicModel, self).cuda()
 
@@ -426,6 +464,27 @@ class BasicModel(nn.Module):
             y = self.layer4(y) + y
             y = self.layer5(y) + y
             y = self.layer6(y)
+            y = self.out(y)
+
+        elif self.model_id==14:
+            y = self.in_(x)
+
+            yl, yr = y, y
+            # Left go
+            for layer_idx, layer in enumerate(self.layers_l):
+                if layer_idx==0 or layer_idx==len(self.n_layers_l)-1:
+                    yl = layer(yl)
+                else:
+                    yl = layer(yl) + yl
+
+            # Right go
+            for layer_idx, layer in enumerate(self.layers_r):
+                if layer_idx==0 or layer_idx==len(self.n_layers_r)-1:
+                    yr = layer(yr)
+                else:
+                    yr = layer(yr) + yr
+
+            y = yl + yr
             y = self.out(y)
 
         return y
