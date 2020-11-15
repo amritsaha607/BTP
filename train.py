@@ -152,7 +152,7 @@ if 'loss_weight' in configs:
 if cont is not None:
     cont = int(cont)
     latest_ckpt = os.path.join(ckpt_dir, 'latest_{}.pth'.format(cont))
-    model.load_state_dict(torch.load(latest_ckpt))
+    model.load_state_dict(torch.load(latest_ckpt, map_location=torch.device('cpu')))
 
 if torch.cuda.is_available():
     model.cuda()
@@ -318,22 +318,23 @@ def run():
 
     config = wandb.config
 
-    config.version = version
-    config.model_ID = model_ID
-    config.batch_size = batch_size
-    config.n_epoch = n_epoch
-    config.train_root = train_root
-    config.val_root = val_root
-    config.data_factors = args.data_factors
-    config.optimizer = optimizer_
-    config.lr = learning_rate
-    config.weight_decay = weight_decay
-    config.adam_eps = adam_eps
-    config.amsgrad = adam_amsgrad
-    config.CHECKPOINT_DIR = CHECKPOINT_DIR
-    config.scheduler = sch_factor if scheduler is not None else None
-    config.cuda = torch.cuda.is_available()
-    config.log_interval = 1
+    if not cont:
+        config.version = version
+        config.model_ID = model_ID
+        config.batch_size = batch_size
+        config.n_epoch = n_epoch
+        config.train_root = train_root
+        config.val_root = val_root
+        config.data_factors = args.data_factors
+        config.optimizer = optimizer_
+        config.lr = learning_rate
+        config.weight_decay = weight_decay
+        config.adam_eps = adam_eps
+        config.amsgrad = adam_amsgrad
+        config.CHECKPOINT_DIR = CHECKPOINT_DIR
+        config.scheduler = sch_factor if scheduler is not None else None
+        config.cuda = torch.cuda.is_available()
+        config.log_interval = 1
     
     BEST_LOSS = float('inf')
 
