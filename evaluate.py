@@ -89,6 +89,10 @@ if mode=='default':
     model_out_dim = 6+2*n_samples
 elif mode=='r':
     model_out_dim = 2
+elif mode=='eps':
+    model_out_dim = 4+2*n_samples
+else:
+    raise AssertionError("Unknown mode [{}] found!".format(mode))
 
 model = BasicModel(
     input_dim = n_samples,

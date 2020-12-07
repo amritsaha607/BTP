@@ -7,6 +7,9 @@ def getLabel(y, mode='default'):
     elif mode=='r':
         y = y[:, :2]
         return y
+    elif mode=='eps':
+        y = y[:, 2:]
+        return y
     else:
         raise ValueError("Unknown mode {} found".format(mode))
 

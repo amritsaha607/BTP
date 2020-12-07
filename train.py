@@ -129,6 +129,10 @@ if mode=='default':
     model_out_dim = 6+2*n_samples
 elif mode=='r':
     model_out_dim = 2
+elif mode=='eps':
+    model_out_dim = 4+2*n_samples
+else:
+    raise AssertionError("Unknown mode [{}] found!".format(mode))
 
 model = BasicModel(
     input_dim = n_samples,
@@ -306,7 +310,7 @@ def run():
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
     # Initialize wandb
-    run_name = "train_{}".format(version)
+    run_name = "train_{}_{}".format(version, mode)
     if args.cont is not None:
         wandb.init(id=args.wid, name=run_name, 
             project=WANDB_PROJECT_NAME, dir=WANDB_PROJECT_DIR, resume=True)
