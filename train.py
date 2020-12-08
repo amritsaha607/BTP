@@ -70,7 +70,7 @@ adam_eps = float(configs['adam_eps'])
 adam_amsgrad = bool(configs['adam_amsgrad'])
 CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
 # ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
-ckpt_dir = os.path.join('checkpoints', version.split('_')[0], str(model_ID), version.split('_')[1])
+ckpt_dir = os.path.join('checkpoints', mode, version.split('_')[0], str(model_ID), version.split('_')[1])
 LOSS_WEIGHT_DIR = configs['LOSS_WEIGHT_DIR']
 input_key = configs['input_key'] if 'input_key' in configs else 'A_tot'
 
