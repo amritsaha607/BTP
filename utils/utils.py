@@ -2,10 +2,23 @@ import numpy as np
 import torch
 
 def getLabel(y, mode='default'):
+    """
+        Extracts needed labels from given data of all labels
+        Args:
+            y   : all labels
+            mode:
+                default: all output
+                r: radius
+                eps_sm: only e1 & e3 (both real and imaginary parts)
+                eps: epsilon data
+    """
     if mode=='default':
         return y
     elif mode=='r':
         y = y[:, :2]
+        return y
+    elif mode=="eps_sm":
+        y = y[:, 2:6]
         return y
     elif mode=='eps':
         y = y[:, 2:]

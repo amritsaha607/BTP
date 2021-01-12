@@ -129,6 +129,8 @@ if mode=='default':
     model_out_dim = 6+2*n_samples
 elif mode=='r':
     model_out_dim = 2
+elif mode=="eps_sm":
+    model_out_dim = 4
 elif mode=='eps':
     model_out_dim = 4+2*n_samples
 else:
@@ -174,7 +176,7 @@ def train(epoch, loader, optimizer, metrics=[],
         metrics : metrics to log
     """
 
-    if (mode=='r' or mode=='eps') and ('loss_split_re' in topups):
+    if (mode=='r' or mode=="eps_sm" or mode=='eps') and ('loss_split_re' in topups):
         raise ValueError("You can't add {} topup in {} mode"
             .format("loss_split_re", mode))
 
