@@ -49,7 +49,7 @@ batch_size = int(configs['batch_size'])
 data_root = configs['val_root']
 CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
 # ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
-ckpt_dir = os.path.join('checkpoints', version.split('_')[0], str(model_ID), version.split('_')[1])
+ckpt_dir = os.path.join('checkpoints', mode, version.split('_')[0], str(model_ID), version.split('_')[1])
 ckpt = glob.glob(os.path.join(ckpt_dir, 'best*.pth'))
 if len(ckpt)==0:
     raise ValueError("No checkpoint found in location {}".format(os.path.join(ckpt_dir, 'best*.pth')))
@@ -105,7 +105,7 @@ model.load_state_dict(torch.load(ckpt, map_location=torch.device('cpu')))
 if torch.cuda.is_available():
     model.cuda()
 
-run_name = "eval_{}".format(version)
+run_name = "eval_{}_{}".format(version, mode)
 wandb.init(name=run_name, project="DL Nanophotonics", dir='/content/wandb/')
 
 config = wandb.config

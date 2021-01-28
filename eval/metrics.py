@@ -2,30 +2,50 @@ import numpy as np
 import torch
 
 
-def ErrAcc(y, y_pred, 
-        err=[1, 5, 10], err_mode="abs",
-        keyPrefix='r', data_factor=100):
+class ErrAcc:
+
     """
         Calculates accuracy with maximum allowable error
-        Args:
-            y : Ground truth
-            y_pred : Predictions
-            err : Maximum allowable error
-            err_mode : Error Mode, rel (relative percentage) or abs
-            keyPrefix : prefix of output dictionary key
     """
 
-    if err_mode=='abs':
-        d = abs(y - y_pred) * data_factor
-    else:
-        d = abs(100 * (y - y_pred) / y)
+    def __init__(self, mode, 
+        err=[1, 5, 10],
+        keyPrefix='r', data_factor=100):
+        """
+            Args:
+                mode : 'abs' or 'rel' for absolute and relative error
+                        Error Mode, rel (relative percentage) or abs
+                err : Maximum allowable error
+                keyPrefix : prefix of output dictionary key
+        """
+        n_err = len(err)
+        self.n_correct = [0]*n_err
+        self.n = [0]*n_err
+        self.acc = {}
+        self.mode = mode
+        self.err = err
+        self.keyPrefix = keyPrefix
+        self.data_factor = data_factor
 
-    res = {}
-    for err_ in err:
-        n, n_correct = d.shape[0], (d<err_).sum()
-        if err_mode=='abs':
-            res['ErrAcc_abs_{}_{}'.format(keyPrefix, err_)] = n_correct / n
+    def feedData(self, y, y_pred):
+        """
+            Calculates accuracy with maximum allowable error
+            Args:
+                y : Ground truth
+                y_pred : Predictions
+        """
+        if self.mode=='abs':
+            d = abs(y - y_pred) * self.data_factor
         else:
-            res['ErrAcc_rel_{}_{}'.format(keyPrefix, err_)] = n_correct / n
+            d = abs(100 * (y - y_pred) / y)
 
-    return res
+        for idx, err_ in enumerate(self.err):
+            n, n_correct = d.shape[0], (d<err_).sum()
+            self.n_correct[idx] += n_correct
+            self.n[idx] += n
+            self.acc['ErrAcc_{}_{}_{}'.format(self.mode, self.keyPrefix, err_)] = self.n_correct[idx] / self.n[idx]
+
+        return self.acc
+
+    def getAcc(self):
+        return self.acc
