@@ -89,6 +89,8 @@ if mode=='default':
     model_out_dim = 6+2*n_samples
 elif mode=='r':
     model_out_dim = 2
+elif mode=="eps_sm":
+    model_out_dim = 4
 elif mode=='eps':
     model_out_dim = 4+2*n_samples
 else:
@@ -109,6 +111,7 @@ wandb.init(name=run_name, project="DL Nanophotonics", dir='/content/wandb/')
 config = wandb.config
 
 config.version = version
+config.mode = mode
 config.model_ID = model_ID
 config.batch_size = batch_size
 config.data_factors = args.data_factors

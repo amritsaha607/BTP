@@ -44,12 +44,12 @@ def evaluate(model, loader,
 
     y_tot, y_pred_tot = np.concatenate(y_tot), np.concatenate(y_pred_tot)
 
-    n_ex = y_tot.shape[0]
-    x_range = np.arange(0, n_ex, 1.0)
-    fig = plt.figure(figsize=(8, 8))
-    plt.scatter(y_tot[:, 0], y_tot[:, 1], label='GT')
-    plt.scatter(y_pred_tot[:, 0], y_pred_tot[:, 1], label='Pred')
-    plt.close()
+    # n_ex = y_tot.shape[0]
+    # x_range = np.arange(0, n_ex, 1.0)
+    # fig = plt.figure(figsize=(8, 8))
+    # plt.scatter(y_tot[:, 0], y_tot[:, 1], label='GT')
+    # plt.scatter(y_pred_tot[:, 0], y_pred_tot[:, 1], label='Pred')
+    # plt.close()
 
     r1s = [y_tot[:, 0], y_pred_tot[:, 0]]
     r2s = [y_tot[:, 1], y_pred_tot[:, 1]]
