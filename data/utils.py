@@ -69,13 +69,36 @@ class PermittivityCalculator:
         """
         if element == "sio2":
             # https://refractiveindex.info/?shelf=main&book=SiO2&page=Radhakrishnan-o
-            n_sq = 1 + 0.663044*(lambd**2)/(lambd**2-0.060**2) + \
-                0.517852*(lambd**2)/(lambd**2-1)
+            n_sq = 1 + 0.663044*(lambd**2)/(lambd**2-0.060**2) + 
+                0.517852*(lambd**2)/(lambd**2-0.106**2) + 0.175912*(lambd**2)/(lambd**2-0.119**2) + 
+                0.565380*(lambd**2)/(lambd**2-8.844**2) + 1.675299*(lambd**2)/(lambd**2-20.742**2)
             k_sq = 0.0
 
         elif element == "al2o3":
             # https://refractiveindex.info/?shelf=main&book=Al2O3&page=Malitson-o
-            n_sq = 1
+            n_sq = 1 + 1.4313493*(lambd**2)/(lambd**2-(0.0726631**2)) + 0.65054713*(lambd**2)/(lambd**2-(0.1193242**2)) + 5.3414021*(lambd**2)/(lambd**2-(18.028251**2))
+            k_sq = 0.0
+
+        elif element == "hgs":
+            # https://refractiveindex.info/?shelf=main&book=HgS&page=Bond-o
+            n_sq = 1 + 3.1506 + 2.7896*(lambd**2)/(lambd**2-0.1328) + 
+                1.1378*(lambd**2)/(lambd**2-1705)
+            k_sq = 0.0
+
+        elif element == "aggas2":
+            # https://refractiveindex.info/?shelf=main&book=AgGaS2&page=Takaoka-o
+            n_sq = 5.7975 + 0.2311/(lambd**2-0.0688) -
+                0.00257*(lambd**2)
+            k_sq = 0.0
+        
+        elif element == "batio3":
+            # https://refractiveindex.info/?shelf=main&book=BaTiO3&page=Wemple-o
+            n_sq = 1 + 4.187*(lambd**2)/(lambd**2-(0.223**2)) 
+            k_sq = 0.0
+
+        elif element == "tio2":
+            # https://refractiveindex.info/?shelf=main&book=TiO2&page=Bodurov
+            n_sq = 1 + 4.6796*(lambd**2)/(lambd**2-(0.2002148**2)) 
             k_sq = 0.0
 
         else:
