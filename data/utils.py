@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
+from torch._C import Value
 
 
 def extractData(filename, 
@@ -47,3 +48,40 @@ def extractData(filename,
     y = np.concatenate([y, f_eps*(eps_2.real), f_eps*(eps_2.imag)], axis=0)
 
     return x, y
+
+
+
+class PermittivityCalculator:
+    """
+        Calculates permittivity for elements as a function of wavelength
+    """
+    def __init__(self):
+        pass
+
+    def getEps(self, lambd,
+        element="sio2"):
+        """
+            Calculates permittivity from wavelength 
+            [Reference : https://refractiveindex.info/]
+            Args:
+                lambd : wavelength
+                element : element name
+        """
+        if element == "sio2":
+            # https://refractiveindex.info/?shelf=main&book=SiO2&page=Radhakrishnan-o
+            n_sq = 1 + 0.663044*(lambd**2)/(lambd**2-0.060**2) + \
+                0.517852*(lambd**2)/(lambd**2-1)
+            k_sq = 0.0
+
+        elif element == "al2o3":
+            # https://refractiveindex.info/?shelf=main&book=Al2O3&page=Malitson-o
+            n_sq = 1
+            k_sq = 0.0
+
+        else:
+            raise ValueError("Unknown element found - {}".format(element))
+        
+        eps_r = n_sq - k_sq
+        eps_i = 2*(n_sq**0.5)*(k_sq**0.5)
+
+        return (eps_r, eps_i)
