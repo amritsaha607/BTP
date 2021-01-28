@@ -24,3 +24,4 @@ debug/.ipynb_checkpoints/*
 # Local files
 start.sh
 commands.txt
+dataGeneration/csv/.ipynb_checkpoints/
