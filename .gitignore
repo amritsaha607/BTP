@@ -10,6 +10,7 @@ dataGeneration/data/
 dataGeneration/data_prev/
 dataGeneration/mass_data/
 dataGeneration/test_data_eps/
+dataGeneration/E1Data/
 dataGeneration/*.zip
 
 # Cache
