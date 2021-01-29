@@ -59,13 +59,15 @@ class PermittivityCalculator:
         pass
 
     def getEps(self, lambd,
-        element="sio2"):
+        element="sio2",
+        mode="tuple"):
         """
             Calculates permittivity from wavelength 
             [Reference : https://refractiveindex.info/]
             Args:
                 lambd : wavelength
                 element : element name
+                mode : complex / tuple
         """
         if element == "sio2":
             # https://refractiveindex.info/?shelf=main&book=SiO2&page=Radhakrishnan-o
@@ -108,5 +110,8 @@ class PermittivityCalculator:
         
         eps_r = n_sq - k_sq
         eps_i = 2*(n_sq**0.5)*(k_sq**0.5)
+
+        if mode=="complex":
+            return eps_r + 1j*eps_i
 
         return (eps_r, eps_i)
