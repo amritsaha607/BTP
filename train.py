@@ -68,7 +68,7 @@ learning_rate = float(configs['lr'])
 weight_decay = float(configs['weight_decay'])
 adam_eps = float(configs['adam_eps'])
 adam_amsgrad = bool(configs['adam_amsgrad'])
-CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
+# CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
 # ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
 ckpt_dir = os.path.join('checkpoints', mode, version.split('_')[0], str(model_ID), version.split('_')[1])
 LOSS_WEIGHT_DIR = configs['LOSS_WEIGHT_DIR']
@@ -337,7 +337,7 @@ def run():
         config.weight_decay = weight_decay
         config.adam_eps = adam_eps
         config.amsgrad = adam_amsgrad
-        config.CHECKPOINT_DIR = CHECKPOINT_DIR
+        config.CHECKPOINT_DIR = ckpt_dir
         config.scheduler = sch_factor if scheduler is not None else None
         config.cuda = torch.cuda.is_available()
         config.log_interval = 1
