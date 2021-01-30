@@ -20,9 +20,10 @@ debug
 debug/.ipynb_checkpoints/*
 */__pycache__/*
 */.ipynb_checkpoints/*
+*/*/__pycache__/*
+*/*/.ipynb_checkpoints/*
 
 
 # Local files
 start.sh
 commands.txt
-dataGeneration/csv/.ipynb_checkpoints/
