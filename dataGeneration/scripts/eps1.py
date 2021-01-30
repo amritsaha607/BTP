@@ -31,7 +31,7 @@ DATA_ROOT = '../../dataGeneration/E1Data/'
 
 lambd = 1e-9*content['wl'].values
 e2 = content['er'].values + 1j*content['ei'].values
-e3 = 1.78 + 1j*0.0
+e3 = 1.00 + 1j*0.0
 
 def helper(material, split="train"):
     print(f"Generating {material} data")
