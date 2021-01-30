@@ -90,7 +90,7 @@ def isMode(mode, check):
     if mode=="default" or mode=="all":
         return True
     
-    if mode.contains(check):
+    if mode.__contains__(check):
         return True
 
     return False
