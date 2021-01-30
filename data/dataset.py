@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 import random
 
 from data.utils import extractData
+from utils.utils import isMode
 from utils.decorators import timer
 
 
@@ -33,7 +34,7 @@ class AreaDataset(Dataset):
             random.shuffle(self.files)
 
         self.e1_materialCode = None
-        if self.mode.__contains__('e1') or self.mode == 'default':
+        if isMode(self.mode, 'e1'):
             self.e1_materialCode = {material.lower(): i for i, material in enumerate(os.listdir(os.path.join(root)))}
 
     def __getitem__(self, index):
