@@ -3,9 +3,13 @@ import numpy as np
 import pandas as pd
 from torch._C import Value
 
+from utils.utils import oneHot
+
 
 def extractData(filename, 
             input_key='A_tot',
+            mode='r',
+            e1_matCode=None,
             factors={'r': 1e9, 'eps': 1e7, 'lambd': 1e9, 'A': 1e17}):
     '''
         Extracts data from a csv file for training
@@ -32,21 +36,25 @@ def extractData(filename,
     # First all wavelength data followed by area data
     # x = np.concatenate([f_lambd*df['lambd'].values, f_A*df['A_tot'].values], axis=0)
 
-    # Output contains parameters like r1, r2, eps_1, eps_2 & eps_3
-    y = np.array([
-        f_r*df['r1'][0],
-        f_r*df['r2'][0],
-        f_eps*complex(df['eps_1'][0]).real,
-        f_eps*complex(df['eps_1'][0]).imag,
-        f_eps*complex(df['eps_3'][0]).real,
-        f_eps*complex(df['eps_3'][0]).imag
-    ])
+    if mode.__contains__('r') or mode=='default':
+        y_r = np.array([
+            f_r*df['r1'][0],
+            f_r*df['r2'][0],
+        ])
 
-    mapping = np.vectorize(lambda t: complex(t.replace('i', 'j')))
-    eps_2 = df['eps_2'].values
-    eps_2 = mapping(eps_2)
-    y = np.concatenate([y, f_eps*(eps_2.real), f_eps*(eps_2.imag)], axis=0)
+    if mode.__contains__('e1') or mode=='default':
+        mat = filename.split('/')[-2]
+        y_e1 = oneHot(e1_matCode[mat], len(e1_matCode.keys()))
 
+    if mode == 'r':
+        y = y_r
+
+    elif mode == 'e1':
+        y = y_e1
+
+    elif mode.__contains__('r') and mode.__contains__('e1'):
+        y = (y_r, y_e1)
+    
     return x, y
 
 

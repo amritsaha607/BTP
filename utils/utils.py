@@ -72,3 +72,12 @@ def getLossWeights(weights_dict, n):
     w[6:6+n] *= weights_dict['e2_r']
     w[6+n:] *= weights_dict['e2_i']
     return w
+
+
+def oneHot(index, n):
+    """
+        Creates one hot vector of n classes with "index" class
+    """
+    x = np.zeros(n)
+    x[index] = 1
+    return x

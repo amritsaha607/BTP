@@ -17,21 +17,33 @@ class AreaDataset(Dataset):
         and the parameters used for the same calculation
     """
 
-    def __init__(self, root='dataGeneration/data/', formats=['.csv'], factors=None, input_key='A_tot'):
+    def __init__(self, 
+        root='dataGeneration/data/', formats=['.csv'], factors=None, input_key='A_tot',
+        mode='r',
+        shuffle=True):
         super(AreaDataset, self).__init__()
 
         self.files = []
         self.factors = factors
         self.input_key = input_key
+        self.mode = mode
         for format_ in formats:
             self.files += glob.glob(os.path.join(root, '*', '*{}'.format(format_)))
-    
+        if shuffle:
+            random.shuffle(self.files)
+
+        self.e1_materialCode = None
+        if self.mode.__contains__('e1') or self.mode == 'default':
+            self.e1_materialCode = {material.lower(): i for i, material in enumerate(os.listdir(os.path.join(root)))}
+
     def __getitem__(self, index):
         file = self.files[index]
         x, y = extractData(
             file, 
             input_key=self.input_key,
-            factors=self.factors
+            mode=self.mode,
+            factors=self.factors,
+            e1_matCode=self.e1_materialCode
         )
         return x, y
 
