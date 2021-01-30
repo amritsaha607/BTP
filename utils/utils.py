@@ -81,3 +81,16 @@ def oneHot(index, n):
     x = np.zeros(n)
     x[index] = 1
     return x
+
+
+def isMode(mode, check):
+    """
+        Check if mode contains "check"
+    """
+    if mode=="default" or mode=="all":
+        return True
+    
+    if mode.contains(check):
+        return True
+
+    return False
