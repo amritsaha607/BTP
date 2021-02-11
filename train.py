@@ -15,7 +15,7 @@ from models.model import BasicModel
 from models.utils.loss import SeperateLoss
 from data.dataset import AreaDataset
 from data.collate import collate
-from utils.utils import getLossWeights, getLabel
+from utils.utils import getLossWeights, getLabel, isMode
 from utils.decorators import timer
 from utils.operations import dictAdd, dictMultiply
 
@@ -92,11 +92,13 @@ if torch.cuda.is_available():
 DATA_FACTOR_ROOT = 'configs/data_factors'
 data_factors = yaml.safe_load(open(os.path.join(DATA_FACTOR_ROOT, '{}.yml'.format(data_factors))))
 data_factors = {key: float(val) for key, val in data_factors.items()}
+collate = collate(mode)
 train_set = AreaDataset(
     root=train_root,
     formats=['.csv'],
     factors=data_factors,
     input_key=input_key,
+    batch_size=batch_size,
 )
 train_loader = DataLoader(
     train_set,
@@ -110,6 +112,7 @@ val_set = AreaDataset(
     formats=['.csv'],
     factors=data_factors,
     input_key=input_key,
+    batch_size=batch_size,
 )
 val_loader = DataLoader(
     val_set,
@@ -188,7 +191,11 @@ def train(epoch, loader, optimizer, metrics=[],
     model.train()
     for batch_idx, (x, y) in enumerate(loader):
 
-        y = getLabel(y, mode=mode)
+        # y = getLabel(y, mode=mode)
+
+        # For e1 mode, break x into parts
+        if isMode(mode, 'e1') or isMode(mode, 'default'):
+            x, x_e1 = x
 
         if torch.cuda.is_available():
             x = x.cuda()

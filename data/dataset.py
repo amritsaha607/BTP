@@ -21,17 +21,32 @@ class AreaDataset(Dataset):
     def __init__(self, 
         root='dataGeneration/data/', formats=['.csv'], factors=None, input_key='A_tot',
         mode='r',
-        shuffle=True):
+        shuffle=True,
+        batch_size=None):
+
+        if isMode(mode, 'e1') and batch_size==None:
+            raise AssertionError("Please provide batch_size for mode {}".format(mode))
+
         super(AreaDataset, self).__init__()
 
         self.files = []
         self.factors = factors
         self.input_key = input_key
         self.mode = mode
+
+        # Shuffling mode changed, data will be shuffled now 
+        # but material wise data will be in sequential order
         for format_ in formats:
-            self.files += glob.glob(os.path.join(root, '*', '*{}'.format(format_)))
-        if shuffle:
-            random.shuffle(self.files)
+            for material in os.listdir(root):
+                files = glob.glob(os.path.join(root, material, '*{}'.format(format_)))
+                if shuffle:
+                    random.shuffle(files)
+                self.files += files
+
+                # For e1 data, we'll have to add extra files (None) to fit it into batch_size
+                # So that multiple material samples doesn't get into single batch
+                if isMode(self.mode, 'e1') and (len(files) % batch_size != 0):
+                    self.files += [None] * int(batch_size - len(files) % batch_size)
 
         self.e1_materialCode = None
         if isMode(self.mode, 'e1'):
@@ -39,6 +54,10 @@ class AreaDataset(Dataset):
 
     def __getitem__(self, index):
         file = self.files[index]
+
+        if isMode(self.mode, 'e1') and file == None:
+            return (None, None), None
+
         x, y = extractData(
             file, 
             input_key=self.input_key,

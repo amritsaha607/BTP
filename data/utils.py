@@ -36,24 +36,16 @@ def extractData(filename,
     # First all wavelength data followed by area data
     # x = np.concatenate([f_lambd*df['lambd'].values, f_A*df['A_tot'].values], axis=0)
 
-    if mode.__contains__('r') or mode=='default':
-        y_r = np.array([
-            f_r*df['r1'][0],
-            f_r*df['r2'][0],
-        ])
+    # Output is radii values only
+    y = np.array([
+        f_r*df['r1'][0],
+        f_r*df['r2'][0],
+    ])
 
     if mode.__contains__('e1') or mode=='default':
-        mat = filename.split('/')[-2]
-        y_e1 = oneHot(e1_matCode[mat], len(e1_matCode.keys()))
-
-    if mode == 'r':
-        y = y_r
-
-    elif mode == 'e1':
-        y = y_e1
-
-    elif mode.__contains__('r') and mode.__contains__('e1'):
-        y = (y_r, y_e1)
+        mat = filename.split('/')[-2] # material name
+        x = (x, mat) # pass e1_id of the material in input
+        # y_e1 = oneHot(e1_matCode[mat], len(e1_matCode.keys()))
     
     return x, y
 

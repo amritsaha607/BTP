@@ -488,3 +488,37 @@ class BasicModel(nn.Module):
             y = self.out(y)
 
         return y
+
+
+class E1Model(nn.Module):
+
+    """
+        Model for e1 data
+    """
+
+    def __init__(self, classes, model_ids, input_dim=98, out_dim=2):
+
+        """
+            classes : Different e1 parameter classes (list)
+            model_ids : which model to pick for which class (list of BasicModel / BasicModel)
+        """
+
+        super(E1Model, self).__init__()
+        self.classes = classes
+        n_classes = len(classes)
+
+        if not isinstance(model_ids, list):
+            model_ids = [model_ids] * n_classes
+
+        self.model = {}
+        for class_, model_id in zip(classes, model_ids):
+            self.model[class_] = BasicModel(input_dim=input_dim, out_dim=out_dim, model_id=model_id)
+        self.model = nn.ModuleDict(self.model)
+
+    def cuda(self, *args, **kwargs):
+        super(E1Model, self).cuda()
+        self.model.cuda()
+
+    def forward(self, x, mat):
+        y = self.model[mat](x)
+        return y
