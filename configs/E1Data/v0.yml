@@ -6,20 +6,13 @@ train_root: 'dataGeneration/E1Data/train/'
 val_root: 'dataGeneration/E1Data/val/'
 formats: ['.csv']
 
-# Radius model
-optimizer_r: 'adam'
-lr_r: 1e-5
-weight_decay_r: 0
-adam_eps_r: 1e-8
-adam_amsgrad_r: True
-
-# e1 prediction
-optimizer_e1: 'adam'
-lr_e1: 1e-5
-weight_decay_e1: 0
-adam_eps_e1: 1e-8
-adam_amsgrad_e1: True
+optimizer: 'adam'
+lr: 1e-5
+weight_decay: 0
+adam_eps: 1e-8
+adam_amsgrad: True
 
 input_key: 'A_abs'
 
+CHECKPOINT_DIR: 'checkpoints/E1Data/'
 LOSS_WEIGHT_DIR: 'configs/loss_weights/'

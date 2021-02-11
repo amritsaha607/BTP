@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from torch._C import Value
 
-from utils.utils import oneHot
+from utils.utils import isMode, oneHot
 
 
 def extractData(filename, 
@@ -42,7 +42,7 @@ def extractData(filename,
         f_r*df['r2'][0],
     ])
 
-    if mode.__contains__('e1') or mode=='default':
+    if isMode(mode, 'e1'):
         mat = filename.split('/')[-2] # material name
         x = (x, mat) # pass e1_id of the material in input
         # y_e1 = oneHot(e1_matCode[mat], len(e1_matCode.keys()))

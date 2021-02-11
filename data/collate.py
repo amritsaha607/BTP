@@ -24,7 +24,7 @@ def collateE1(data):
     batch_size = len(data)
 
     x = torch.tensor([data[i][0][0] for i in range(batch_size) if data[i][0][0] is not None], dtype=torch.float)
-    x_e1 = np.unique([data[i][0][1] for i in range(batch_size) if data[i][0][1] is not None])
+    x_e1 = np.unique([data[i][0][1] for i in range(batch_size) if data[i][0][1] is not None])[0]
     y = torch.tensor([data[i][1] for i in range(batch_size) if data[i][1] is not None], dtype=torch.float)
 
     return (x, x_e1), y
