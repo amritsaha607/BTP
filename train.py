@@ -151,7 +151,7 @@ if isMode(mode, 'e1'):
             'al2o3',
             'sio2',
         ],
-        model_ids = model_ID,
+        model_id = model_ID,
         input_dim = n_samples,
         out_dim = model_out_dim,
     )

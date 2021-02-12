@@ -496,7 +496,7 @@ class E1Model(nn.Module):
         Model for e1 data
     """
 
-    def __init__(self, classes, model_ids, input_dim=98, out_dim=2):
+    def __init__(self, classes, model_id, input_dim=98, out_dim=2):
 
         """
             classes : Different e1 parameter classes (list)
@@ -505,15 +505,14 @@ class E1Model(nn.Module):
 
         super(E1Model, self).__init__()
         self.classes = classes
-        n_classes = len(classes)
+        self.n_classes = len(classes)
+        self.model_id = model_id
+        self.input_dim = input_dim
+        self.out_dim = out_dim
 
-        if not isinstance(model_ids, list):
-            model_ids = [model_ids] * n_classes
-
-        self.model = {}
-        for class_, model_id in zip(classes, model_ids):
-            self.model[class_] = BasicModel(input_dim=input_dim, out_dim=out_dim, model_id=model_id)
-        self.model = nn.ModuleDict(self.model)
+        if self.model_id == 1:
+            model_ids = 7
+            self.bakeModel(model_ids=model_ids)
 
     def cuda(self, *args, **kwargs):
         super(E1Model, self).cuda()
@@ -522,3 +521,15 @@ class E1Model(nn.Module):
     def forward(self, x, mat):
         y = self.model[mat](x)
         return y
+
+    def bakeModel(self, model_ids):
+        """
+            Bake E1Model from BasicModel class
+        """
+        if not isinstance(model_ids, list):
+            model_ids = [model_ids] * self.n_classes
+
+        self.model = {}
+        for class_, model_id in zip(self.classes, model_ids):
+            self.model[class_] = BasicModel(input_dim=self.input_dim, out_dim=self.out_dim, model_id=model_id)
+        self.model = nn.ModuleDict(self.model)
