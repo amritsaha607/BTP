@@ -517,6 +517,30 @@ class E1Model(nn.Module):
         elif self.model_id == 2:
             model_ids = 8
             self.bakeModel(model_ids=model_ids)
+        
+        elif self.model_id == 3:
+            model_ids = 9
+            self.bakeModel(model_ids=model_ids)
+
+        elif self.model_id == 4:
+            model_ids = 10
+            self.bakeModel(model_ids=model_ids)
+
+        elif self.model_id == 5:
+            model_ids = 11
+            self.bakeModel(model_ids=model_ids)
+
+        elif self.model_id == 6:
+            model_ids = 12
+            self.bakeModel(model_ids=model_ids)
+
+        elif self.model_id == 7:
+            model_ids = 13
+            self.bakeModel(model_ids=model_ids)
+
+        elif self.model_id == 8:
+            model_ids = 14
+            self.bakeModel(model_ids=model_ids)
 
     def cuda(self, *args, **kwargs):
         super(E1Model, self).cuda()
