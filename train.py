@@ -1,4 +1,5 @@
 from collections import defaultdict
+from evaluate import CLASSES
 import yaml
 import os
 import glob
@@ -146,11 +147,12 @@ n_samples = pd.read_csv(f).values.shape[0]
 model_out_dim = 2
 
 if isMode(mode, 'e1'):
+    CLASSES = [
+        'al2o3',
+        'sio2',
+    ]
     model = E1Model(
-        classes = [
-            'al2o3',
-            'sio2',
-        ],
+        classes = CLASSES,
         model_id = model_ID,
         input_dim = n_samples,
         out_dim = model_out_dim,
