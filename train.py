@@ -1,5 +1,4 @@
 from collections import defaultdict
-from evaluate import CLASSES
 import yaml
 import os
 import glob
