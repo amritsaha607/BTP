@@ -11,10 +11,10 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from models.model import BasicModel
+from models.model import BasicModel, E1Model
 from data.dataset import AreaDataset
 from data.collate import collate
-from utils.utils import getLabel
+from utils.utils import getLabel, isMode
 from utils.decorators import timer
 from utils.operations import dictAdd, dictMultiply
 from eval.utils import evaluate
@@ -47,7 +47,7 @@ configs = yaml.safe_load(open(cfg_path))
 random_seed = int(configs['random_seed'])
 batch_size = int(configs['batch_size'])
 data_root = configs['val_root']
-CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
+# CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
 # ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
 ckpt_dir = os.path.join('checkpoints', mode, version.split('_')[0], str(model_ID), version.split('_')[1])
 ckpt = glob.glob(os.path.join(ckpt_dir, 'best*.pth'))
@@ -66,11 +66,15 @@ torch.cuda.manual_seed(random_seed)
 DATA_FACTOR_ROOT = 'configs/data_factors'
 data_factors = yaml.safe_load(open(os.path.join(DATA_FACTOR_ROOT, '{}.yml'.format(data_factors))))
 data_factors = {key: float(val) for key, val in data_factors.items()}
+collate = collate(mode)
 dataset = AreaDataset(
     root=data_root,
     formats=['.csv'],
     factors=data_factors,
     input_key=input_key,
+    mode=mode,
+    shuffle=True,
+    batch_size=batch_size,
 )
 dataloader = DataLoader(
     dataset,
@@ -85,26 +89,41 @@ f = glob.glob(os.path.join(data_root, '*', '*.csv'))[0]
 n_samples = pd.read_csv(f).values.shape[0]
 
 # Model
-if mode=='default':
-    model_out_dim = 6+2*n_samples
-elif mode=='r':
-    model_out_dim = 2
-elif mode=="eps_sm":
-    model_out_dim = 4
-elif mode=='eps':
-    model_out_dim = 4+2*n_samples
-else:
-    raise AssertionError("Unknown mode [{}] found!".format(mode))
+# if mode=='default':
+#     model_out_dim = 6+2*n_samples
+# elif mode=='r':
+#     model_out_dim = 2
+# elif mode=="eps_sm":
+#     model_out_dim = 4
+# elif mode=='eps':
+#     model_out_dim = 4+2*n_samples
+# else:
+#     raise AssertionError("Unknown mode [{}] found!".format(mode))
+model_out_dim = 2
 
-model = BasicModel(
-    input_dim = n_samples,
-    out_dim = model_out_dim,
-    model_id=model_ID,
-)
+CLASSES = None
+if isMode(mode, 'e1'):
+    CLASSES = [
+        'al2o3',
+        'sio2',
+    ]
+    model = E1Model(
+        classes = CLASSES,
+        model_id = model_ID,
+        input_dim = n_samples,
+        out_dim = model_out_dim,
+    )
+else:
+    model = BasicModel(
+        input_dim = n_samples,
+        out_dim = model_out_dim,
+        model_id = model_ID,
+    )
 model.load_state_dict(torch.load(ckpt, map_location=torch.device('cpu')))
 if torch.cuda.is_available():
     model.cuda()
 
+# WANDB setups
 run_name = "eval_{}_{}".format(version, mode)
 wandb.init(name=run_name, project="DL Nanophotonics", dir='/content/wandb/')
 
@@ -115,7 +134,8 @@ config.mode = mode
 config.model_ID = model_ID
 config.batch_size = batch_size
 config.data_factors = args.data_factors
-config.CHECKPOINT_DIR = CHECKPOINT_DIR
+config.CHECKPOINT_DIR = ckpt_dir
+config.checkpoint = ckpt
 config.cuda = torch.cuda.is_available()
 config.log_interval = 1
 
@@ -125,7 +145,8 @@ loggs = evaluate(
     mode=mode,
     verbose=verbose,
     rel_err_acc_meters=[1, 5, 10, 20, 50, 100],
-    abs_err_acc_meters=[0.2, 0.5, 1, 2, 3, 5, 10, 25]
+    abs_err_acc_meters=[0.2, 0.5, 1, 2, 3, 5, 10, 25],
+    e1_classes = CLASSES,
 )
 for logg in loggs:
     wandb.log(logg)
