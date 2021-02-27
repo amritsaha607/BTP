@@ -146,16 +146,19 @@ n_samples = pd.read_csv(f).values.shape[0]
 model_out_dim = 2
 
 if isMode(mode, 'e1'):
-    CLASSES = [
+    E1_CLASSES = [
         'al2o3',
         'sio2',
     ]
     model = E1Model(
-        classes = CLASSES,
+        classes = E1_CLASSES,
         model_id = model_ID,
         input_dim = n_samples,
         out_dim = model_out_dim,
     )
+    E1_BEST_LOSSES = defaultdict(float)
+    for e1_cls in E1_CLASSES:
+        E1_BEST_LOSSES[e1_cls] = float('inf')
 else:
     model = BasicModel(
         input_dim = n_samples,
@@ -466,6 +469,13 @@ def run():
             # if epoch==n_epoch:
             os.system('rm {}'.format(os.path.join(ckpt_dir, 'latest_*.pth')))
             torch.save(model.state_dict(), os.path.join(ckpt_dir, 'latest_{}.pth'.format(epoch)))
+
+            if isMode(mode, 'e1'):
+                for e1_cls in E1_CLASSES:
+                    if logg[f"val_loss_{e1_cls}"] < E1_BEST_LOSSES[e1_cls]:
+                        E1_BEST_LOSSES[e1_cls] = logg[f"val_loss_{e1_cls}"]
+                        os.system('rm {}'.format(os.path.join(ckpt_dir, f'e1_best_{e1_cls}_*')))
+                        torch.save(model.state_dict(), os.path.join(ckpt_dir, f'e1_best_{e1_cls}_{epoch}.pth'))
 
 
 if __name__=='__main__':
