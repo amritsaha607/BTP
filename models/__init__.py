@@ -1,1 +1,1 @@
-from .model import BasicModel
+from .model import BasicModel, E1Model

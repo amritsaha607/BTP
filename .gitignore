@@ -27,3 +27,4 @@ debug/.ipynb_checkpoints/*
 # Local files
 start.sh
 commands.txt
+exec.py

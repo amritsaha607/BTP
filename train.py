@@ -17,6 +17,7 @@ from models.utils.loss import SeperateLoss
 from data.dataset import AreaDataset
 from data.collate import collate
 from utils.utils import getLossWeights, getLabel, isMode
+from utils.parameters import E1_CLASSES
 from utils.decorators import timer
 from utils.operations import dictAdd, dictMultiply
 
@@ -146,10 +147,6 @@ n_samples = pd.read_csv(f).values.shape[0]
 model_out_dim = 2
 
 if isMode(mode, 'e1'):
-    E1_CLASSES = [
-        'al2o3',
-        'sio2',
-    ]
     model = E1Model(
         classes = E1_CLASSES,
         model_id = model_ID,

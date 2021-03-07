@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from torch._C import Value
 
-from utils.utils import isMode, oneHot
+from utils.utils import isMode
 
 
 def extractData(filename, 
