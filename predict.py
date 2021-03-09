@@ -1,6 +1,8 @@
 from collections import defaultdict
 import os
 import glob
+from tabulate import tabulate
+
 from utils.parameters import E1_CLASSES
 import yaml
 import argparse
@@ -8,6 +10,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import pandas as pd
+import wandb
 
 from data.utils import PermittivityCalculator
 from dataGeneration.utils import getArea
@@ -29,6 +32,8 @@ parser.add_argument(
         r - predict r\
         r_e1 - r corresponding to each e1_Class"
 )
+parser.add_argument('--log', type=int, default=0, 
+    help='To log the results in wandb or not')
 args = parser.parse_args()
 
 
@@ -36,6 +41,7 @@ args = parser.parse_args()
 data_factors = args.data_factors
 model_id = args.model
 mode = args.mode
+log = args.log
 
 
 # Factors
@@ -49,7 +55,8 @@ if isMode(mode, 'e1'):
     f_name = 'dataGeneration/csv/Au_interpolated_1.csv'
     content = pd.read_csv(f_name)
 
-    r_e1_data = pd.read_csv("PredictionData/r_e1.csv")
+    PREDICTION_FILE = "PredictionData/r_e1.csv"
+    r_e1_data = pd.read_csv(PREDICTION_FILE)
     r_e1_data = {key: r_e1_data[key].values for key in r_e1_data.keys()}
     r_e1_data['r1'] = r_e1_data['r1'] * 1e-9
     r_e1_data['r2'] = r_e1_data['r2'] * 1e-9
@@ -61,7 +68,8 @@ elif isMode(mode, 'r'):
     f_name = 'dataGeneration/csv/Au_interpolated_5.csv'
     content = pd.read_csv(f_name)
 
-    r_data = pd.read_csv("PredictionData/r.csv")
+    PREDICTION_FILE = "PredictionData/r.csv"
+    r_data = pd.read_csv(PREDICTION_FILE)
     r1s, r2s = r_data['r1'].values, r_data['r2'].values
     r_data = np.array([[r1s[i], r2s[i]] for i in range(len(r1s))])
     r_data = r_data * 1e-9
@@ -144,6 +152,27 @@ if isMode(mode, 'e1'):
 elif isMode(mode, 'r'):
     CHECKPOINT_DIR = f'checkpoints/{mode}/MassData/{model_id}'
 
+
+# Logging
+if log:
+    if isMode(mode, 'e1'):
+        WANDB_PROJECT_NAME = 'DL Nanophotonics'
+        WANDB_PROJECT_DIR = '/content/wandb/'
+        run_name = f"predict_{mode}_{model_id}"
+
+        wandb.init(
+            name=run_name, 
+            project=WANDB_PROJECT_NAME, 
+            dir=WANDB_PROJECT_DIR
+        )
+
+        config = wandb.config
+        config.mode = mode
+        config.model_id = model_id
+        config.prediction_file = PREDICTION_FILE
+        config.classes = E1_CLASSES
+
+
 for version in sorted(os.listdir(CHECKPOINT_DIR)):
     print(version)
     ckpt = os.path.join(CHECKPOINT_DIR, version)
@@ -151,13 +180,18 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
     model.load_state_dict(torch.load(ckpt, map_location=torch.device('cpu')))
 
     if isMode(mode, 'e1'):
-        for e1_prediction_class in e1_prediction_classes:
-            print(f"\nPrediction class : {e1_prediction_class}")
 
-            output_header_string = f"r1\tr2\t"
-            for e1_cls in E1_CLASSES:
-                output_header_string += f"r1_pred ({e1_cls})\tr2_pred ({e1_cls})\terr_pred ({e1_cls})\t"
-            print(output_header_string)
+        wandb_table_cols = ['Original Class', 'r1', 'r2']
+        wandb_table_rows = []
+
+        for e1_cls in E1_CLASSES:
+            wandb_table_cols += [
+                f'r1_pred ({e1_cls})', 
+                f'r2_pred ({e1_cls})', 
+                f'err_pred ({e1_cls})',
+            ]
+
+        for e1_prediction_class in e1_prediction_classes:
 
             x = r_e1_data_x[e1_prediction_class]
             y = r_e1_data_y[e1_prediction_class]
@@ -183,18 +217,22 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
                 y_preds[e1_cls] = y_pred
                 err_preds[e1_cls] = err_spectra
 
-                # print(x.shape, y.shape, x_pred.shape, y_pred.shape)
-                # print(f"check class : {e1_cls}, error in reconstructred spectra : {err_spectra}")
-
             n_r = len(y)
             for i in range(n_r):
-                output_string = '{:.2f}\t{:.2f}\t'.format(y[i, 0]*1e9, y[i, 1]*1e9)
+                wandb_table_row = [e1_prediction_class, y[i, 0]*1e9, y[i, 1]*1e9,]
                 for e1_cls in E1_CLASSES:
-                    output_string += '{:.2f}\t\t{:.2f}\t\t{:.4f}\t\t'.format(
-                        y_preds[e1_cls][i, 0]*1e9/data_factors['r'], 
+                    wandb_table_row += [
+                        y_preds[e1_cls][i, 0]*1e9/data_factors['r'],
                         y_preds[e1_cls][i, 1]*1e9/data_factors['r'],
-                        err_preds[e1_cls])
-                print(output_string)
+                        err_preds[e1_cls]
+                    ]
+                wandb_table_rows.append(wandb_table_row)
+
+            if log:
+                table = wandb.Table(data=wandb_table_rows, columns=wandb_table_cols)
+                wandb.log({f'table_{version}': table})
+
+        print(tabulate(wandb_table_rows, headers=wandb_table_cols))
 
     elif isMode(mode, 'r'):
         if CUDA:
