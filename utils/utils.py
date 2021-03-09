@@ -115,6 +115,7 @@ def getAreaE1Class(r, e1_cls,
         # If eps is not calculated let's calculate it
         # so that we don't have to calculate it everytime in loop
         if not eps:
+            e3 = 1.00 + 1j*0.0
 
             if lambd is None:
                 content = pd.read_csv(data_file)
@@ -124,12 +125,12 @@ def getAreaE1Class(r, e1_cls,
             if e1 is None:
                 from data.utils import PermittivityCalculator
                 pc = PermittivityCalculator()
-                e1 = np.array([pc.getEps(wl_, element=e1_cls, mode="complex") for wl_ in lambd])
+                e1 = np.array([pc.getEps(wl_, element=e1_cls, mode="complex") for wl_ in lambd*1e6])
 
             eps = {
                 'e1': e1,
                 'e2': e2,
-                'e3': 1.0 + 1j*0.0,
+                'e3': e3,
             }
 
         for i in range(n_r):
@@ -161,7 +162,7 @@ def getAreaE1Class(r, e1_cls,
         if e1 is None:
             from data.utils import PermittivityCalculator
             pc = PermittivityCalculator()
-            e1 = np.array([pc.getEps(wl_, element=e1_cls, mode="complex") for wl_ in lambd])
+            e1 = np.array([pc.getEps(wl_, element=e1_cls, mode="complex") for wl_ in lambd*1e6])
 
         eps = {
             'e1': e1,
@@ -170,6 +171,12 @@ def getAreaE1Class(r, e1_cls,
         }
 
     A_sca, A_abs = getArea(r, eps, lambd)
+    # if r['r1'] == 10e-9 and r['r2'] == 20e-9:
+    #     print(e1_cls)
+    #     print(data_factors)
+    #     print(A_abs[:5])
+    #     print(A_abs.min(), A_abs.max())
+    #     p
     A_sca, A_abs = A_sca*data_factors['A'], A_abs*data_factors['A']
 
     return A_sca, A_abs

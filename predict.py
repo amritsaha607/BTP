@@ -51,6 +51,9 @@ if isMode(mode, 'e1'):
 
     r_e1_data = pd.read_csv("PredictionData/r_e1.csv")
     r_e1_data = {key: r_e1_data[key].values for key in r_e1_data.keys()}
+    r_e1_data['r1'] = r_e1_data['r1'] * 1e-9
+    r_e1_data['r2'] = r_e1_data['r2'] * 1e-9
+    
     lambd = 1e-9*content['wl'].values
     e2 = content['er'].values + 1j*content['ei'].values
 
@@ -149,12 +152,49 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
 
     if isMode(mode, 'e1'):
         for e1_prediction_class in e1_prediction_classes:
+            print(f"\nPrediction class : {e1_prediction_class}")
+
+            output_header_string = f"r1\tr2\t"
+            for e1_cls in E1_CLASSES:
+                output_header_string += f"r1_pred ({e1_cls})\tr2_pred ({e1_cls})\terr_pred ({e1_cls})\t"
+            print(output_header_string)
+
             x = r_e1_data_x[e1_prediction_class]
             y = r_e1_data_y[e1_prediction_class]
+            y_preds = {}
+            err_preds = {}
 
             for e1_cls in E1_CLASSES:
                 y_pred = model(x, e1_cls)
-                print(x.shape, y.shape, y_pred.shape)
+
+                # Reconstruct spectra from prediction using Maxwell's equations
+                x_pred = getAreaE1Class(
+                    list(y.numpy()),
+                    e1_cls=e1_cls,
+                    data_factors=data_factors,
+                    ret_mode='abs',
+                )
+                x_pred = torch.tensor(x_pred)
+
+                # Check the error between input spectra and reconstructed spectra
+                err_spectra = np.abs(x - x_pred).sum()
+
+                # Store prediction data
+                y_preds[e1_cls] = y_pred
+                err_preds[e1_cls] = err_spectra
+
+                # print(x.shape, y.shape, x_pred.shape, y_pred.shape)
+                # print(f"check class : {e1_cls}, error in reconstructred spectra : {err_spectra}")
+
+            n_r = len(y)
+            for i in range(n_r):
+                output_string = '{:.2f}\t{:.2f}\t'.format(y[i, 0]*1e9, y[i, 1]*1e9)
+                for e1_cls in E1_CLASSES:
+                    output_string += '{:.2f}\t\t{:.2f}\t\t{:.4f}\t\t'.format(
+                        y_preds[e1_cls][i, 0]*1e9/data_factors['r'], 
+                        y_preds[e1_cls][i, 1]*1e9/data_factors['r'],
+                        err_preds[e1_cls])
+                print(output_string)
 
     elif isMode(mode, 'r'):
         if CUDA:
@@ -166,6 +206,7 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
         y = list(model(x).detach().cpu().numpy())
 
         for [r1, r2], [r1_pred, r2_pred] in zip(r_data, y):
-            print('({:.2f}, {:.2f}) -> ({:.2f}, {:.2f})'.format(r1*1e9, r2*1e9, r1_pred*1e9/data_factors['r'], r2_pred*1e9/data_factors['r']))
+            print('({:.2f}, {:.2f}) -> ({:.2f}, {:.2f})'.format(
+                r1*1e9, r2*1e9, r1_pred*1e9/data_factors['r'], r2_pred*1e9/data_factors['r']))
 
     print()

@@ -65,7 +65,7 @@ class PermittivityCalculator:
             Calculates permittivity from wavelength 
             [Reference : https://refractiveindex.info/]
             Args:
-                lambd : wavelength
+                lambd : wavelength (in micrometer [1e-6])
                 element : element name
                 mode : complex / tuple
         """
