@@ -295,8 +295,9 @@ if isMode(mode, 'e1'):
                   dispose=True
                   )
 
-    for [df, sheet_name] in dataframes:
-        df.drop('Plots', 1, inplace=True)
-        table = wandb.Table(data=list(df.values),
-                            columns=list(df.keys()))
-        wandb.log({f'table_{sheet_name}': table})
+    if log:
+        for [df, sheet_name] in dataframes:
+            df.drop('Plots', 1, inplace=True)
+            table = wandb.Table(data=list(df.values),
+                                columns=list(df.keys()))
+            wandb.log({f'table_{sheet_name}': table})
