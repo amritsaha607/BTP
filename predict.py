@@ -224,7 +224,7 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
                 x_pred = torch.tensor(x_pred)
 
                 # Check the error between input spectra and reconstructed spectra
-                err_spectra = np.abs(x - x_pred).sum()
+                err_spectra = np.abs(x - x_pred).sum(axis=1)
 
                 # Store prediction data
                 x_preds[e1_cls] = x_pred
@@ -252,7 +252,7 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
                     wandb_table_row += [
                         y_preds[e1_cls][i, 0]*1e9/data_factors['r'],
                         y_preds[e1_cls][i, 1]*1e9/data_factors['r'],
-                        err_preds[e1_cls]
+                        err_preds[e1_cls][i],
                     ]
                 
                 wandb_table_row = [float(elem) if torch.is_tensor(elem) else elem 

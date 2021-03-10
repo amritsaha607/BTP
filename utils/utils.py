@@ -214,9 +214,12 @@ def excelDfWriter(df, filename='temp.xlsx',
         sheet_name = [sheet_name]
 
     workbook = openpyxl.Workbook()
-    # for sheet_name_ in sheet_name:
-    #     workbook.create_sheet(sheet_name_)
-    
+
+    # Remove any default sheet/s
+    default_sheet = workbook.get_sheet_by_name("Sheet")
+    workbook.remove_sheet(default_sheet)
+
+    # Put values in different sheets
     for (df_, sheet_name_) in zip(df, sheet_name):
         workbook.create_sheet(sheet_name_)
         worksheet = workbook[sheet_name_]
