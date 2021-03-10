@@ -286,12 +286,6 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
 
 
 if isMode(mode, 'e1'):
-    # with pd.ExcelWriter(EXPORT_EXCEL_FILENAME) as excelWriter:
-    #     for [df, sheet_name] in dataframes:
-    #         df.to_excel(excelWriter, sheet_name=sheet_name, index=False)
-
-    # for [df, sheet_name] in dataframes:
-    #     excelDfWriter(df, filename=EXPORT_EXCEL_FILENAME, sheet_name=sheet_name, dispose=True)
 
     dfs = [elem[0] for elem in dataframes]
     sheets = [elem[1] for elem in dataframes]
@@ -302,16 +296,6 @@ if isMode(mode, 'e1'):
                   )
 
     for [df, sheet_name] in dataframes:
-    #     for row_num, img in enumerate(df['Plots']):
-    #         excelImageWriter(
-    #             img,
-    #             mode='fig',
-    #             filename=EXPORT_EXCEL_FILENAME,
-    #             sheet_name=sheet_name,
-    #             dispose=True,
-    #             cell=f'D{row_num+2}',
-    #         )
-
         df.drop('Plots', 1, inplace=True)
         table = wandb.Table(data=list(df.values),
                             columns=list(df.keys()))
