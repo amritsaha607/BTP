@@ -2,6 +2,10 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 import torch
+import os
+import xlsxwriter
+import openpyxl
+import matplotlib
 
 from dataGeneration.utils import getArea
 
@@ -201,3 +205,71 @@ def getLossWeights(weights_dict, n):
     w[6+n:] *= weights_dict['e2_i']
     return w
 
+
+def excelDfWriter(df, filename='temp.xlsx',
+    sheet_name='sheet 1', dispose=False):
+
+    if not isinstance(df, list):
+        df = [df]
+        sheet_name = [sheet_name]
+
+    workbook = openpyxl.Workbook()
+    # for sheet_name_ in sheet_name:
+    #     workbook.create_sheet(sheet_name_)
+    
+    for (df_, sheet_name_) in zip(df, sheet_name):
+        workbook.create_sheet(sheet_name_)
+        worksheet = workbook[sheet_name_]
+        col = 'A'
+
+        for key in df_.keys():
+            worksheet[f'{col}1'] = key
+
+            row = 2
+            for val in df_[key]:
+                if isinstance(val, matplotlib.figure.Figure):
+                    val.savefig("temp.png")
+                    img = openpyxl.drawing.image.Image("temp.png")
+                    # img.width = 500
+                    # img.height = 500
+                    worksheet.add_image(img, f'{col}{row}')
+                else:
+                    worksheet[f'{col}{row}'] = val
+                row += 1
+            
+            col = chr(ord(col) + 1)
+
+    workbook.save(filename=filename)
+
+
+def excelImageWriter(img, mode='path', 
+    filename='temp.xlsx', sheet_name='sheet 1', 
+    dispose=False, cell='A1'):
+
+    """
+        Writes an image in xlsx file
+        Args:
+            img : image file
+            mode :
+                'path' => image path
+                'fig' => matplotlib figure object
+            filename : filename of xlsx file
+            dispose : if True, delete the image file after writing it to excel
+            cell : which cell to write image
+    """
+
+    if mode == 'fig':
+        img.savefig('temp.png', dpi=img.dpi)
+        img = 'temp.png'
+
+    workbook = xlsxwriter.Workbook(filename)
+    worksheet = workbook.get_worksheet_by_name(sheet_name)
+    # print(f"worksheet : {worksheet}")
+    worksheet.write_row(0, 0, 'xyz')
+    # worksheet.insert_image(cell, img)
+    # worksheet = workbook.add_worksheet()
+    # worksheet.insert_image(cell, img)
+    workbook.close()
+
+    if dispose:
+        os.remove(img)

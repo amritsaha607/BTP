@@ -1,6 +1,8 @@
 from collections import defaultdict
 import os
 import glob
+
+from utils.vis import plotArrMulti
 from tabulate import tabulate
 
 from utils.parameters import E1_CLASSES
@@ -15,7 +17,7 @@ import wandb
 from data.utils import PermittivityCalculator
 from dataGeneration.utils import getArea
 from models import BasicModel, E1Model
-from utils.utils import isMode, getAreaE1Class
+from utils.utils import excelDfWriter, isMode, getAreaE1Class, excelImageWriter
 
 CUDA = torch.cuda.is_available()
 
@@ -34,6 +36,8 @@ parser.add_argument(
 )
 parser.add_argument('--log', type=int, default=0, 
     help='To log the results in wandb or not')
+parser.add_argument('--plot', type=int, default=0, 
+    help='To log the plots in wandb or not')
 args = parser.parse_args()
 
 
@@ -42,6 +46,11 @@ data_factors = args.data_factors
 model_id = args.model
 mode = args.mode
 log = args.log
+plot = args.plot
+
+
+EXPORT_EXCEL_FILENAME = f'PredictionData/Results/{mode}/model_{model_id}.xlsx'
+dataframes = []
 
 
 # Factors
@@ -182,6 +191,8 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
     if isMode(mode, 'e1'):
 
         wandb_table_cols = ['Original Class', 'r1', 'r2']
+        if plot:
+            wandb_table_cols.append("Plots")
         wandb_table_rows = []
 
         for e1_cls in E1_CLASSES:
@@ -195,6 +206,7 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
 
             x = r_e1_data_x[e1_prediction_class]
             y = r_e1_data_y[e1_prediction_class]
+            x_preds = {}
             y_preds = {}
             err_preds = {}
 
@@ -205,6 +217,7 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
                 x_pred = getAreaE1Class(
                     list(y.numpy()),
                     e1_cls=e1_cls,
+                    data_file='dataGeneration/csv/Au_interpolated_1.csv',
                     data_factors=data_factors,
                     ret_mode='abs',
                 )
@@ -214,23 +227,45 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
                 err_spectra = np.abs(x - x_pred).sum()
 
                 # Store prediction data
+                x_preds[e1_cls] = x_pred
                 y_preds[e1_cls] = y_pred
                 err_preds[e1_cls] = err_spectra
 
             n_r = len(y)
             for i in range(n_r):
-                wandb_table_row = [e1_prediction_class, y[i, 0]*1e9, y[i, 1]*1e9,]
+                wandb_table_row = [e1_prediction_class, y[i, 0]*1e9, y[i, 1]*1e9]
+                
+                # Make the plots
+                if plot:
+                    fig = plotArrMulti(
+                        [x[i].numpy()] + [x_preds[key][i].numpy() for key in sorted(x_preds.keys())],
+                        labels = [f'GT ({e1_prediction_class})'] + [key for key in sorted(x_preds.keys())],
+                        debug = False,
+                        ret_mode = 'fig',
+                        continuous = True,
+                        size_=(5, 5),
+                    )
+                    wandb_table_row.append(fig)
+                
+                # Insert predictions and corresponding errors
                 for e1_cls in E1_CLASSES:
                     wandb_table_row += [
                         y_preds[e1_cls][i, 0]*1e9/data_factors['r'],
                         y_preds[e1_cls][i, 1]*1e9/data_factors['r'],
                         err_preds[e1_cls]
                     ]
+                
+                wandb_table_row = [float(elem) if torch.is_tensor(elem) else elem 
+                    for elem in wandb_table_row]
                 wandb_table_rows.append(wandb_table_row)
 
-            if log:
-                table = wandb.Table(data=wandb_table_rows, columns=wandb_table_cols)
-                wandb.log({f'table_{version}': table})
+        if log:
+            df = pd.DataFrame(
+                data=wandb_table_rows,
+                columns=wandb_table_cols,
+                index=['']*len(wandb_table_rows),
+            )
+            dataframes.append([df, version])
 
         print(tabulate(wandb_table_rows, headers=wandb_table_cols))
 
@@ -248,3 +283,36 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
                 r1*1e9, r2*1e9, r1_pred*1e9/data_factors['r'], r2_pred*1e9/data_factors['r']))
 
     print()
+
+
+if isMode(mode, 'e1'):
+    # with pd.ExcelWriter(EXPORT_EXCEL_FILENAME) as excelWriter:
+    #     for [df, sheet_name] in dataframes:
+    #         df.to_excel(excelWriter, sheet_name=sheet_name, index=False)
+
+    # for [df, sheet_name] in dataframes:
+    #     excelDfWriter(df, filename=EXPORT_EXCEL_FILENAME, sheet_name=sheet_name, dispose=True)
+
+    dfs = [elem[0] for elem in dataframes]
+    sheets = [elem[1] for elem in dataframes]
+    excelDfWriter(dfs,
+                  filename=EXPORT_EXCEL_FILENAME,
+                  sheet_name=sheets,
+                  dispose=True
+                  )
+
+    for [df, sheet_name] in dataframes:
+    #     for row_num, img in enumerate(df['Plots']):
+    #         excelImageWriter(
+    #             img,
+    #             mode='fig',
+    #             filename=EXPORT_EXCEL_FILENAME,
+    #             sheet_name=sheet_name,
+    #             dispose=True,
+    #             cell=f'D{row_num+2}',
+    #         )
+
+        df.drop('Plots', 1, inplace=True)
+        table = wandb.Table(data=list(df.values),
+                            columns=list(df.keys()))
+        wandb.log({f'table_{sheet_name}': table})

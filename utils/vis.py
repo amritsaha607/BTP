@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import wandb
 
 from dataGeneration.utils import getArea
 
@@ -33,10 +34,14 @@ def plotArr(arr, debug=True,
     
 
 def plotArrMulti(arr, labels='temp_label', debug=True,
-            size_=(8, 8), scatter=False, continuous=False):
+            size_=(8, 8), scatter=False, continuous=False,
+            ret_mode='fig'):
     """
         Multiple plot of arrays in one plot
     """
+
+    if not scatter and not continuous:
+        raise AssertionError("Please set at least one of scatter and continuous parameter")
 
     if isinstance(arr, list):
         n = len(arr)
@@ -59,6 +64,8 @@ def plotArrMulti(arr, labels='temp_label', debug=True,
 
     plt.legend()
     if not debug:
+        if ret_mode == 'wandb_image':
+            fig = wandb.Image(fig)
         plt.close()
         return fig
 
