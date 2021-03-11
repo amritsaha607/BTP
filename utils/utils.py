@@ -257,35 +257,3 @@ def excelDfWriter(df, filename='temp.xlsx',
         for i in range(1, img_counter):
             os.remove(f"temp_{i}.png")
 
-
-def excelImageWriter(img, mode='path', 
-    filename='temp.xlsx', sheet_name='sheet 1', 
-    dispose=False, cell='A1'):
-
-    """
-        Writes an image in xlsx file
-        Args:
-            img : image file
-            mode :
-                'path' => image path
-                'fig' => matplotlib figure object
-            filename : filename of xlsx file
-            dispose : if True, delete the image file after writing it to excel
-            cell : which cell to write image
-    """
-
-    if mode == 'fig':
-        img.savefig('temp.png', dpi=img.dpi)
-        img = 'temp.png'
-
-    workbook = xlsxwriter.Workbook(filename)
-    worksheet = workbook.get_worksheet_by_name(sheet_name)
-    # print(f"worksheet : {worksheet}")
-    worksheet.write_row(0, 0, 'xyz')
-    # worksheet.insert_image(cell, img)
-    # worksheet = workbook.add_worksheet()
-    # worksheet.insert_image(cell, img)
-    workbook.close()
-
-    if dispose:
-        os.remove(img)

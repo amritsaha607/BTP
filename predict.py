@@ -17,7 +17,7 @@ import wandb
 from data.utils import PermittivityCalculator
 from dataGeneration.utils import getArea
 from models import BasicModel, E1Model
-from utils.utils import excelDfWriter, isMode, getAreaE1Class, excelImageWriter
+from utils.utils import excelDfWriter, isMode, getAreaE1Class
 
 CUDA = torch.cuda.is_available()
 
