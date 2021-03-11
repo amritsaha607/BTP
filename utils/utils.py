@@ -209,6 +209,15 @@ def getLossWeights(weights_dict, n):
 def excelDfWriter(df, filename='temp.xlsx',
     sheet_name='sheet 1', dispose=False):
 
+    """
+        Write dataframe to excel file
+        Args:
+            df : dataframe
+            filename : output filename
+            sheet_name : sheet_name
+            dispose : To remove the images in the dataframe (True) or save them as files (False)
+    """
+
     if not isinstance(df, list):
         df = [df]
         sheet_name = [sheet_name]
@@ -220,6 +229,7 @@ def excelDfWriter(df, filename='temp.xlsx',
     workbook.remove_sheet(default_sheet)
 
     # Put values in different sheets
+    img_counter = 1
     for (df_, sheet_name_) in zip(df, sheet_name):
         workbook.create_sheet(sheet_name_)
         worksheet = workbook[sheet_name_]
@@ -231,11 +241,10 @@ def excelDfWriter(df, filename='temp.xlsx',
             row = 2
             for val in df_[key]:
                 if isinstance(val, matplotlib.figure.Figure):
-                    val.savefig("temp.png")
-                    img = openpyxl.drawing.image.Image("temp.png")
-                    # img.width = 500
-                    # img.height = 500
+                    val.savefig(f"temp_{img_counter}.png")
+                    img = openpyxl.drawing.image.Image(f"temp_{img_counter}.png")
                     worksheet.add_image(img, f'{col}{row}')
+                    img_counter += 1
                 else:
                     worksheet[f'{col}{row}'] = val
                 row += 1
@@ -243,6 +252,10 @@ def excelDfWriter(df, filename='temp.xlsx',
             col = chr(ord(col) + 1)
 
     workbook.save(filename=filename)
+
+    if dispose:
+        for i in range(1, img_counter):
+            os.remove(f"temp_{i}.png")
 
 
 def excelImageWriter(img, mode='path', 
