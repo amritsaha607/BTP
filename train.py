@@ -16,7 +16,7 @@ from models.model import BasicModel, E1Model
 from models.utils.loss import SeperateLoss
 from data.dataset import AreaDataset
 from data.collate import collate
-from utils.utils import getLossWeights, getLabel, isMode
+from utils.utils import getLossWeights, getLabel, isMode, transform_domain
 from utils.parameters import E1_CLASSES
 from utils.decorators import timer
 from utils.operations import dictAdd, dictMultiply
@@ -45,7 +45,11 @@ parser.add_argument(
         default - predict all\
         r - predict r"
 )
-parser.add_argument('--save', type=int, default=100, help='Version of experiment')
+parser.add_argument('--save', type=int, default=1, help='To save model checkpoints or not')
+parser.add_argument('--domain', type=int, default=0, 
+    help="Pipeline domain\
+        0 -> model predicts (r1, r2)\
+        1 -> model predicts (r1/r2, r2-r1)")
 args = parser.parse_args()
 
 
@@ -57,6 +61,7 @@ model_ID = args.model
 data_factors = args.data_factors
 mode = args.mode
 save = args.save
+domain = args.domain
 cfg_path = os.path.join('configs/{}.yml'.format(version.replace('_', '/')))
 configs = yaml.safe_load(open(cfg_path))
 
@@ -72,7 +77,7 @@ adam_eps = float(configs['adam_eps'])
 adam_amsgrad = bool(configs['adam_amsgrad'])
 # CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
 # ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
-ckpt_dir = os.path.join('checkpoints', mode, version.split('_')[0], str(model_ID), version.split('_')[1])
+ckpt_dir = os.path.join('checkpoints', f'domain_{domain}', mode, version.split('_')[0], str(model_ID), version.split('_')[1])
 LOSS_WEIGHT_DIR = configs['LOSS_WEIGHT_DIR']
 input_key = configs['input_key'] if 'input_key' in configs else 'A_tot'
 
@@ -223,12 +228,17 @@ def train(epoch, loader, optimizer, metrics=[],
             x = x.cuda()
             y = y.cuda()
 
+        y = transform_domain(y, domain=domain)
+
         if isMode(mode, 'e1'):
             y_pred = model(x, x_e1)
         else:
             y_pred = model(x)
 
-        loss = criterion(y_pred, y, mode=loss_mode, run='train', weights=loss_weights)
+        loss = criterion(y_pred, y,
+                         mode=loss_mode,
+                         run='train',
+                         weights=loss_weights)
         loss.backward()
         optimizer.step()
 
@@ -307,6 +317,8 @@ def validate(epoch, loader, metrics=[],
             x = x.cuda()
             y = y.cuda()
 
+        y = transform_domain(y, domain=domain)
+
         if isMode(mode, 'e1'):
             y_pred = model(x, x_e1)
         else:
@@ -381,7 +393,7 @@ def run():
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
     # Initialize wandb
-    run_name = "train_{}_{}".format(version, mode)
+    run_name = "train_{}_{}_dom{}".format(version, mode, domain)
     if args.cont is not None:
         wandb.init(id=args.wid, name=run_name, 
             project=WANDB_PROJECT_NAME, dir=WANDB_PROJECT_DIR, resume=True)
@@ -395,6 +407,7 @@ def run():
 
     if not cont:
         config.version = version
+        config.domain = domain
         config.model_ID = model_ID
         config.batch_size = batch_size
         config.n_epoch = n_epoch

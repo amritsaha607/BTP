@@ -257,3 +257,27 @@ def excelDfWriter(df, filename='temp.xlsx',
         for i in range(1, img_counter):
             os.remove(f"temp_{i}.png")
 
+
+def transform_domain(y, domain=0, reverse_=False):
+
+    if reverse_ == False:
+        if domain == 0:
+            return y
+        elif domain == 1:
+            # a=r1/r2, b=r2-r1 => [a, b]
+            y[:, 0], y[:, 1] = y[:, 0]/y[:, 1], y[:, 1]-y[:, 0]
+            return y
+        else:
+            raise ValueError(f"Unknown domain {domain}")
+    
+    else:
+        if domain == 0:
+            return y
+        elif domain == 1:
+            # [a, b]
+            # r1 = a*b/(1-a), b=b/(1-a) => [r1, r2]
+            y[:, 0], y[:, 1] = y[:, 0]*y[:, 1]/(1-y[:, 0]), y[:, 1]/(1-y[:, 0])
+            return y
+        else:
+            raise ValueError(f"Unknown domain {domain}")
+
