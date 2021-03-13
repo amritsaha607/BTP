@@ -24,6 +24,10 @@ CUDA = torch.cuda.is_available()
 # Add argument via parser
 parser = argparse.ArgumentParser()
 
+parser.add_argument('--domain', type=int, default=0, 
+    help="Pipeline domain\
+        0 -> model predicts (r1, r2)\
+        1 -> model predicts (r1/r2, r2-r1)")
 parser.add_argument('--model', type=int, default=0, help='Model ID')
 parser.add_argument('--data_factors', type=str, default='f2', 
     help='To spply factor in dataset')
@@ -42,6 +46,7 @@ args = parser.parse_args()
 
 
 # Extract args
+domain = args.domain
 data_factors = args.data_factors
 model_id = args.model
 mode = args.mode
@@ -49,8 +54,11 @@ log = args.log
 plot = args.plot
 
 
-EXPORT_EXCEL_FILENAME = f'PredictionData/Results/{mode}/model_{model_id}.xlsx'
+EXPORT_EXCEL_FILENAME = f'PredictionData/Results/dom{domain}/{mode}/model_{model_id}.xlsx'
 dataframes = []
+
+if not os.path.exists(os.path.dirname(EXPORT_EXCEL_FILENAME)):
+    os.makedirs(os.path.dirname(EXPORT_EXCEL_FILENAME))
 
 
 # Factors
@@ -157,9 +165,9 @@ elif isMode(mode, 'r'):
 
 # Checkpoint at different versions
 if isMode(mode, 'e1'):
-    CHECKPOINT_DIR = f'checkpoints/{mode}/E1Data/{model_id}'
+    CHECKPOINT_DIR = f'checkpoints/domain_{domain}/{mode}/E1Data/{model_id}'
 elif isMode(mode, 'r'):
-    CHECKPOINT_DIR = f'checkpoints/{mode}/MassData/{model_id}'
+    CHECKPOINT_DIR = f'checkpoints/domain_{domain}/{mode}/MassData/{model_id}'
 
 
 # Logging
@@ -177,7 +185,7 @@ if log:
 
         config = wandb.config
         config.mode = mode
-        config.model_id = model_id
+        config.model_ID = model_id
         config.prediction_file = PREDICTION_FILE
         config.classes = E1_CLASSES
 
