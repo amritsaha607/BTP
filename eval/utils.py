@@ -5,14 +5,15 @@ import wandb
 import matplotlib.pyplot as plt
 
 from utils.vis import plotArrMulti
-from utils.utils import getLabel, isMode
+from utils.utils import getLabel, isMode, transform_domain
 from eval.metrics import ErrAcc
 
 def evaluate(model, loader, 
                 mode='default', verbose=1,
                 rel_err_acc_meters=[1, 5, 10],
                 abs_err_acc_meters=[1, 5, 10],
-                e1_classes=None):
+                e1_classes=None,
+                domain=0):
 
     """
         Evaluate model on dataset
@@ -66,6 +67,7 @@ def evaluate(model, loader,
 
         y = y.detach().cpu()
         y_pred = y_pred.detach().cpu()
+        y_pred = transform_domain(y_pred, domain=domain, reverse_=True)
 
         # Calculate metric on the fly
         if isMode(mode, 'e1'):

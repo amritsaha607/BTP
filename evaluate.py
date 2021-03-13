@@ -34,6 +34,10 @@ parser.add_argument(
         default - predict all\
         r - predict r"
 )
+parser.add_argument('--domain', type=int, default=0, 
+    help="Pipeline domain\
+        0 -> model predicts (r1, r2)\
+        1 -> model predicts (r1/r2, r2-r1)")
 args = parser.parse_args()
 
 version = args.version
@@ -41,6 +45,7 @@ model_ID = args.model
 verbose = args.verbose
 data_factors = args.data_factors
 mode = args.mode
+domain = args.domain
 cfg_path = os.path.join('configs/{}.yml'.format(version.replace('_', '/')))
 configs = yaml.safe_load(open(cfg_path))
 
@@ -49,7 +54,7 @@ batch_size = int(configs['batch_size'])
 data_root = configs['val_root']
 # CHECKPOINT_DIR = configs['CHECKPOINT_DIR']
 # ckpt_dir = os.path.join('checkpoints', version.replace('_', '/'))
-ckpt_dir = os.path.join('checkpoints', mode, version.split('_')[0], str(model_ID), version.split('_')[1])
+ckpt_dir = os.path.join('checkpoints', f'domain_{domain}', mode, version.split('_')[0], str(model_ID), version.split('_')[1])
 ckpt = glob.glob(os.path.join(ckpt_dir, 'best*.pth'))
 if len(ckpt)==0:
     raise ValueError("No checkpoint found in location {}".format(os.path.join(ckpt_dir, 'best*.pth')))
@@ -124,11 +129,12 @@ if torch.cuda.is_available():
     model.cuda()
 
 # WANDB setups
-run_name = "eval_{}_{}".format(version, mode)
+run_name = "eval_{}_{}_dom{}".format(version, mode, domain)
 wandb.init(name=run_name, project="DL Nanophotonics", dir='/content/wandb/')
 
 config = wandb.config
 
+config.domain = domain
 config.version = version
 config.mode = mode
 config.model_ID = model_ID
@@ -147,6 +153,7 @@ loggs = evaluate(
     rel_err_acc_meters=[1, 5, 10, 20, 50, 100],
     abs_err_acc_meters=[0.2, 0.5, 1, 2, 3, 5, 10, 25],
     e1_classes = CLASSES,
+    domain = domain,
 )
 for logg in loggs:
     wandb.log(logg)
