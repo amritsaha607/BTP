@@ -251,7 +251,7 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
                         debug = False,
                         ret_mode = 'fig',
                         continuous = True,
-                        size_=(5, 5),
+                        size_=(2, 2),
                     )
                     wandb_table_row.append(fig)
                 

@@ -245,6 +245,10 @@ def excelDfWriter(df, filename='temp.xlsx',
                     img = openpyxl.drawing.image.Image(f"temp_{img_counter}.png")
                     worksheet.add_image(img, f'{col}{row}')
                     img_counter += 1
+
+                    [x_dim, y_dim] = val.get_size_inches() * val.dpi
+                    worksheet.column_dimensions[col].width = x_dim//8 # 25
+                    worksheet.row_dimensions[row].height = (y_dim * 3) // 4 # 150
                 else:
                     worksheet[f'{col}{row}'] = val
                 row += 1
