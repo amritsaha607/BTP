@@ -175,7 +175,7 @@ if log:
     if isMode(mode, 'e1'):
         WANDB_PROJECT_NAME = 'DL Nanophotonics'
         WANDB_PROJECT_DIR = '/content/wandb/'
-        run_name = f"predict_{mode}_{model_id}"
+        run_name = f"predict_{mode}_{model_id}_dom{domain}"
 
         wandb.init(
             name=run_name, 
