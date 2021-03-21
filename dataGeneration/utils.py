@@ -1,7 +1,9 @@
 import os
+from matplotlib.pyplot import axis
 import numpy as np
 import pandas as pd
 from collections import defaultdict
+from collections.abc import Iterable
 
 from utils.parameters import EPS_0
 from utils.operations import makeList
@@ -27,8 +29,16 @@ def getEps(e1, e2, params, mode='P'):
     else:
         P = params
     
-    ea = e1*(3-2*P) + 2*e2*P
-    eb = e1*P + e2*(3-P)
+    # For multiple r1 & r2 values, we'll have to do matrix multiplication
+    # as P will be an array as well
+    if isinstance(P, Iterable):
+        ea = np.outer(e1, (3-2*P)) + 2*np.outer(e2, P)
+        eb = np.outer(e1, P) + np.outer(e2, 3-P)
+
+    # For a single (r1, r2) sample pair, ea & eb will be same as e1 & e2
+    else:
+        ea = e1*(3-2*P) + 2*e2*P
+        eb = e1*P + e2*(3-P)
 
     return ea, eb
 
@@ -60,6 +70,13 @@ def getAlpha(eps, r, baked=False):
         r1 = r['r1']
         ea, eb = getEps(e1, e2, params=(r1, r2), mode='R')
     
+    # For multiple (r1, r2) pairs, ea & eb will be 2D
+    # In that case to execute following calculations, we'll
+    # have to unsqueeze e1 & e2 as 2D vectors
+    if ea.ndim == 2:
+        e1 = np.expand_dims(e1, axis=1)
+        e2 = np.expand_dims(e2, axis=1)
+
     alpha = 4*np.pi*EPS_0*(r2**3) * (e2*ea-e3*eb)/(e2*ea+2*e3*eb)
     return alpha
 
@@ -89,6 +106,8 @@ def getArea(r, eps, lambd, write=None, f_out=None):
     alpha = getAlpha(eps, r, baked=False)
 
     # Scattering cross section
+    if alpha.ndim == 2:
+        k = np.expand_dims(k, axis=1)
     area_sca = (1/(6*np.pi*(EPS_0**2))) * (k**4) * (abs(alpha)**2)
     
     # Absorption cross section
