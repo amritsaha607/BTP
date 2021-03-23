@@ -43,7 +43,9 @@ parser.add_argument(
     '--mode', type=str, default='default', 
     help="Mode selects which parameter to predict\
         default - predict all\
-        r - predict r"
+        r - predict r\
+        r_e1 - predict r with e1 class\
+        r_e1_e2 - predict r with e1 & e2 classes"
 )
 parser.add_argument('--save', type=int, default=1, help='To save model checkpoints or not')
 parser.add_argument('--domain', type=int, default=0, 
