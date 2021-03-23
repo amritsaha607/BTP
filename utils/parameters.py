@@ -11,3 +11,7 @@ E1_CLASSES = [
     'al2o3',
     'sio2',
 ]
+E2_CLASSES = [
+    'au',
+    'ag',
+]
