@@ -29,6 +29,13 @@ def isMode(mode, check):
     if mode.__contains__(check):
         return True
 
+    if mode.__contains__("_"):
+        modes = mode.split("_")
+        for mode_ in modes:
+            if not isMode(mode_, check):
+                return False
+        return True
+
     return False
 
 
