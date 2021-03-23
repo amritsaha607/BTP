@@ -618,7 +618,7 @@ class E1E2Model(nn.Module):
             self.bakeModel(model_id=model_id)
 
     def cuda(self, *args, **kwargs):
-        super(E1Model, self).cuda()
+        super(E1E2Model, self).cuda()
         self.model.cuda()
 
     def forward(self, x, e1_mat, e2_mat):
