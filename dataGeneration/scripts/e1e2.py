@@ -49,7 +49,7 @@ def helperUtil(data):
         'e3': e3,
     }
 
-    f_out = os.path.join(DATA_ROOT, split, e1_mat, e2_mat, f"{counter+1}.csv")
+    f_out = os.path.join(DATA_ROOT, split, e1_mat.lower(), e2_mat.lower(), f"{counter+1}.csv")
 
     getArea(
         tr, te, lambd,
