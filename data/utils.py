@@ -42,7 +42,13 @@ def extractData(filename,
         f_r*df['r2'][0],
     ])
 
-    if isMode(mode, 'e1'):
+    if isMode(mode, 'e1_e2'):
+        # Extract e1_mat & e2_mat from filename
+        info = filename.split('/')
+        e1_mat, e2_mat = info[-3], info[-2]
+        x = (x, e1_mat, e2_mat)
+
+    elif isMode(mode, 'e1'):
         mat = filename.split('/')[-2] # material name
         x = (x, mat) # pass e1_id of the material in input
         # y_e1 = oneHot(e1_matCode[mat], len(e1_matCode.keys()))

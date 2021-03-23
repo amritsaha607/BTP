@@ -33,20 +33,36 @@ class AreaDataset(Dataset):
         self.factors = factors
         self.input_key = input_key
         self.mode = mode
+        
+        if isMode(self.mode, 'e1_e2'):
+            for format_ in formats:
+                for e1_mat in os.listdir(root):
+                    e1_root = os.path.join(root, e1_mat)
+                    for e2_mat in os.listdir(e1_root):
+                        e2_root = os.path.join(e1_root, e2_mat)
+                        files = glob.glob(os.path.join(e2_root, f"*{format_}"))
+                        self.files += files
 
-        # Shuffling mode changed, data will be shuffled now 
-        # but material wise data will be in sequential order
-        for format_ in formats:
-            for material in os.listdir(root):
-                files = glob.glob(os.path.join(root, material, '*{}'.format(format_)))
-                if shuffle:
-                    random.shuffle(files)
-                self.files += files
+                        if shuffle:
+                            random.shuffle(files)
 
-                # For e1 data, we'll have to add extra files (None) to fit it into batch_size
-                # So that multiple material samples doesn't get into single batch
-                if isMode(self.mode, 'e1') and (len(files) % batch_size != 0):
-                    self.files += [None] * int(batch_size - len(files) % batch_size)
+                        if len(files) % batch_size != 0:
+                            self.files += [None] * int(batch_size - len(files) % batch_size)
+
+        else:
+            # Shuffling mode changed, data will be shuffled now 
+            # but material wise data will be in sequential order
+            for format_ in formats:
+                for material in os.listdir(root):
+                    files = glob.glob(os.path.join(root, material, '*{}'.format(format_)))
+                    if shuffle:
+                        random.shuffle(files)
+                    self.files += files
+
+                    # For e1 data, we'll have to add extra files (None) to fit it into batch_size
+                    # So that multiple material samples doesn't get into single batch
+                    if isMode(self.mode, 'e1') and (len(files) % batch_size != 0):
+                        self.files += [None] * int(batch_size - len(files) % batch_size)
 
         self.e1_materialCode = None
         if isMode(self.mode, 'e1'):
@@ -55,8 +71,11 @@ class AreaDataset(Dataset):
     def __getitem__(self, index):
         file = self.files[index]
 
-        if isMode(self.mode, 'e1') and file == None:
-            return (None, None), None
+        if file == None:
+            if isMode(self.mode, 'e1_e2'):
+                return (None, None, None), None
+            elif isMode(self.mode, 'e1'):
+                return (None, None), None
 
         x, y = extractData(
             file, 
