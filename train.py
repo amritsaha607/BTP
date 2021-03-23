@@ -232,7 +232,9 @@ def train(epoch, loader, optimizer, metrics=[],
 
         y = transform_domain(y, domain=domain)
 
-        if isMode(mode, 'e1'):
+        if isMode(mode, 'e1_e2'):
+            y_pred = model(x, x_e1, x_e2)
+        elif isMode(mode, 'e1'):
             y_pred = model(x, x_e1)
         else:
             y_pred = model(x)
@@ -321,7 +323,9 @@ def validate(epoch, loader, metrics=[],
 
         y = transform_domain(y, domain=domain)
 
-        if isMode(mode, 'e1'):
+        if isMode(mode, 'e1_e2'):
+            y_pred = model(x, x_e1, x_e2)
+        elif isMode(mode, 'e1'):
             y_pred = model(x, x_e1)
         else:
             y_pred = model(x)
