@@ -13,6 +13,9 @@ dataGeneration/test_data_eps/
 dataGeneration/E1Data/
 dataGeneration/*.zip
 
+# Prediction Results
+PredictionData/Results/
+
 # Cache
 __pycache__/*
 .ipynb_checkpoints/*

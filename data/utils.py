@@ -115,3 +115,22 @@ class PermittivityCalculator:
             return eps_r + 1j*eps_i
 
         return (eps_r, eps_i)
+
+    def getEpsArr(self, element, interval=1, mode="complex", f_root=""):
+        """
+            Returns eps array for an element
+        """
+        f_name = os.path.join(f_root, f"csv/{element}_interpolated_{interval}.csv")
+        if not os.path.exists(f_name):
+            raise FileNotFoundError(f"File {f_name} does not exist")
+
+        content = pd.read_csv(f_name)
+        er = content['er'].values
+        ei = content['ei'].values
+
+        if mode=="complex":
+            return er + 1j*ei
+        elif mode=="tuple":
+            return (er, ei)
+        else:
+            return NameError(f"Unknown mode {mode} found")
