@@ -1,4 +1,5 @@
 from collections import defaultdict
+from utils.parameters import E1_CLASSES, E2_CLASSES
 import numpy as np
 import torch
 import wandb
@@ -21,7 +22,9 @@ def evaluate(model, loader,
 
     n = len(loader)
     y_tot, y_pred_tot = [], []
-    if isMode(mode, 'e1'):
+    if isMode(mode, 'e1_e2'):
+        y_tot_e1e2, y_pred_tot_e1e2 = defaultdict(list), defaultdict(list)
+    elif isMode(mode, 'e1'):
         y_tot_e1, y_pred_tot_e1 = defaultdict(list), defaultdict(list)
 
     # r1_idx, r2_idx = None, None
@@ -30,7 +33,20 @@ def evaluate(model, loader,
     r1_idx, r2_idx = 0, 1
 
     rel_err_acc_r1, rel_err_acc_r2, abs_err_acc_r1, abs_err_acc_r2 = [None]*4
-    if isMode(mode, 'e1'):
+
+    if isMode(mode, 'e1_e2'):
+        DEFAULT_KEY = 'default'
+        e1e2_classes = [f'{e1_cls},{e2_cls}' for e1_cls in E1_CLASSES for e2_cls in E2_CLASSES]
+        rel_err_acc_r1_calculator = {DEFAULT_KEY: ErrAcc(mode='rel', err=rel_err_acc_meters, keyPrefix='r1')}
+        rel_err_acc_r2_calculator = {DEFAULT_KEY: ErrAcc(mode='rel', err=rel_err_acc_meters, keyPrefix='r2')}
+        abs_err_acc_r1_calculator = {DEFAULT_KEY: ErrAcc(mode='abs', err=abs_err_acc_meters, keyPrefix='r1')}
+        abs_err_acc_r2_calculator = {DEFAULT_KEY: ErrAcc(mode='abs', err=abs_err_acc_meters, keyPrefix='r2')}
+        for class_ in e1e2_classes:
+            rel_err_acc_r1_calculator[f'{class_}'] = ErrAcc(mode='rel', err=rel_err_acc_meters, keyPrefix=f'{class_}_r1')
+            rel_err_acc_r2_calculator[f'{class_}'] = ErrAcc(mode='rel', err=rel_err_acc_meters, keyPrefix=f'{class_}_r2')
+            abs_err_acc_r1_calculator[f'{class_}'] = ErrAcc(mode='abs', err=abs_err_acc_meters, keyPrefix=f'{class_}_r1')
+            abs_err_acc_r2_calculator[f'{class_}'] = ErrAcc(mode='abs', err=abs_err_acc_meters, keyPrefix=f'{class_}_r2')
+    elif isMode(mode, 'e1'):
         DEFAULT_KEY = 'default'
         rel_err_acc_r1_calculator = {DEFAULT_KEY: ErrAcc(mode='rel', err=rel_err_acc_meters, keyPrefix='r1')}
         rel_err_acc_r2_calculator = {DEFAULT_KEY: ErrAcc(mode='rel', err=rel_err_acc_meters, keyPrefix='r2')}
@@ -53,14 +69,18 @@ def evaluate(model, loader,
 
         # y = getLabel(y, mode=mode)
 
-        if isMode(mode, 'e1'):
+        if isMode(mode, 'e1_e2'):
+            x, x_e1, x_e2 = x
+        elif isMode(mode, 'e1'):
             x, x_e1 = x
 
         if torch.cuda.is_available():
             x = x.cuda()
             y = y.cuda()
 
-        if isMode(mode, 'e1'):
+        if isMode(mode, 'e1_e2'):
+            y_pred = model(x, x_e1, x_e2)
+        elif isMode(mode, 'e1'):
             y_pred = model(x, x_e1)
         else:
             y_pred = model(x)
@@ -70,7 +90,17 @@ def evaluate(model, loader,
         y_pred = transform_domain(y_pred, domain=domain, reverse_=True)
 
         # Calculate metric on the fly
-        if isMode(mode, 'e1'):
+        if isMode(mode, 'e1_e2'):
+            rel_err_acc_r1_calculator['default'].feedData(y[:, r1_idx].numpy(), y_pred[:, r1_idx].numpy())
+            rel_err_acc_r2_calculator['default'].feedData(y[:, r2_idx].numpy(), y_pred[:, r2_idx].numpy())
+            abs_err_acc_r1_calculator['default'].feedData(y[:, r1_idx].numpy(), y_pred[:, r1_idx].numpy())
+            abs_err_acc_r2_calculator['default'].feedData(y[:, r2_idx].numpy(), y_pred[:, r2_idx].numpy())
+
+            rel_err_acc_r1_calculator[f'{x_e1},{x_e2}'].feedData(y[:, r1_idx].numpy(), y_pred[:, r1_idx].numpy())
+            rel_err_acc_r2_calculator[f'{x_e1},{x_e2}'].feedData(y[:, r2_idx].numpy(), y_pred[:, r2_idx].numpy())
+            abs_err_acc_r1_calculator[f'{x_e1},{x_e2}'].feedData(y[:, r1_idx].numpy(), y_pred[:, r1_idx].numpy())
+            abs_err_acc_r2_calculator[f'{x_e1},{x_e2}'].feedData(y[:, r2_idx].numpy(), y_pred[:, r2_idx].numpy())
+        elif isMode(mode, 'e1'):
             rel_err_acc_r1_calculator['default'].feedData(y[:, r1_idx].numpy(), y_pred[:, r1_idx].numpy())
             rel_err_acc_r2_calculator['default'].feedData(y[:, r2_idx].numpy(), y_pred[:, r2_idx].numpy())
             abs_err_acc_r1_calculator['default'].feedData(y[:, r1_idx].numpy(), y_pred[:, r1_idx].numpy())
@@ -89,7 +119,10 @@ def evaluate(model, loader,
         # Keep track of predictions vs labels
         y_tot.append(y.numpy())
         y_pred_tot.append(y_pred.numpy())
-        if isMode(mode, 'e1'):
+        if isMode(mode, 'e1_e2'):
+            y_tot_e1e2[f'{x_e1},{x_e2}'].append(y.numpy())
+            y_pred_tot_e1e2[f'{x_e1},{x_e2}'].append(y_pred.numpy())
+        elif isMode(mode, 'e1'):
             y_tot_e1[x_e1].append(y.numpy())
             y_pred_tot_e1[x_e1].append(y_pred.numpy())
 
@@ -104,7 +137,11 @@ def evaluate(model, loader,
 
     # Process total data [labels & predictions]
     y_tot, y_pred_tot = np.concatenate(y_tot), np.concatenate(y_pred_tot)
-    if isMode(mode, 'e1'):
+    if isMode(mode, 'e1_e2'):
+        for class_ in e1e2_classes:
+            y_tot_e1e2[class_] = np.concatenate(y_tot_e1e2[class_])
+            y_pred_tot_e1e2[class_] = np.concatenate(y_pred_tot_e1e2[class_])
+    elif isMode(mode, 'e1'):
         for class_ in e1_classes:
             y_tot_e1[class_] = np.concatenate(y_tot_e1[class_])
             y_pred_tot_e1[class_] = np.concatenate(y_pred_tot_e1[class_])
@@ -112,7 +149,12 @@ def evaluate(model, loader,
     # Format into r1 & r2
     r1s = [y_tot[:, 0], y_pred_tot[:, 0]]
     r2s = [y_tot[:, 1], y_pred_tot[:, 1]]
-    if isMode(mode, 'e1'):
+    if isMode(mode, 'e1_e2'):
+        r1s_e1e2, r2s_e1e2 = {}, {}
+        for class_ in e1e2_classes:
+            r1s_e1e2[class_] = [y_tot_e1e2[class_][:, 0], y_pred_tot_e1e2[class_][:, 0]]
+            r2s_e1e2[class_] = [y_tot_e1e2[class_][:, 1], y_pred_tot_e1e2[class_][:, 1]]
+    elif isMode(mode, 'e1'):
         r1s_e1, r2s_e1 = {}, {}
         for class_ in e1_classes:
             r1s_e1[class_] = [y_tot_e1[class_][:, 0], y_pred_tot_e1[class_][:, 0]]
@@ -131,7 +173,18 @@ def evaluate(model, loader,
             'r2_pred': r2s[1][i]
         }
         loggs.append(logg)
-    if isMode(mode, 'e1'):
+    if isMode(mode, 'e1_e2'):
+        for class_ in e1e2_classes:
+            n = len(r1s_e1e2[class_][0])
+            for i in range(n):
+                logg = {
+                    f'r1_{class_}': r1s_e1e2[class_][0][i],
+                    f'r1_pred_{class_}': r1s_e1e2[class_][1][i],
+                    f'r2_{class_}': r2s_e1e2[class_][0][i],
+                    f'r2_pred_{class_}': r2s_e1e2[class_][1][i],
+                }
+                loggs.append(logg)            
+    elif isMode(mode, 'e1'):
         for class_ in e1_classes:
             n = len(r1s_e1[class_][0])
             for i in range(n):
@@ -146,7 +199,18 @@ def evaluate(model, loader,
     # Append metric values into loggs
     err_acc = {}
 
-    if isMode(mode, 'e1'):
+    if isMode(mode, 'e1_e2'):
+        for class_ in e1e2_classes+[DEFAULT_KEY]:
+            rel_err_acc_r1 = rel_err_acc_r1_calculator[f'{class_}'].getAcc()
+            rel_err_acc_r2 = rel_err_acc_r2_calculator[f'{class_}'].getAcc()
+            abs_err_acc_r1 = abs_err_acc_r1_calculator[f'{class_}'].getAcc()
+            abs_err_acc_r2 = abs_err_acc_r2_calculator[f'{class_}'].getAcc()
+
+            err_acc.update(rel_err_acc_r1)
+            err_acc.update(rel_err_acc_r2)
+            err_acc.update(abs_err_acc_r1)
+            err_acc.update(abs_err_acc_r2)
+    elif isMode(mode, 'e1'):
         for class_ in e1_classes+[DEFAULT_KEY]:
             rel_err_acc_r1 = rel_err_acc_r1_calculator[f'{class_}'].getAcc()
             rel_err_acc_r2 = rel_err_acc_r2_calculator[f'{class_}'].getAcc()

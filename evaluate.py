@@ -1,3 +1,4 @@
+from utils.parameters import E1_CLASSES, E2_CLASSES
 import yaml
 import os
 import glob
@@ -11,7 +12,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from models.model import BasicModel, E1Model
+from models.model import BasicModel, E1E2Model, E1Model
 from data.dataset import AreaDataset
 from data.collate import collate
 from utils.utils import getLabel, isMode
@@ -92,7 +93,11 @@ dataloader = DataLoader(
 )
 
 # Samples
-f = glob.glob(os.path.join(data_root, '*', '*.csv'))[0]
+f = None
+if isMode(mode, 'e1_e2'):
+    f = glob.glob(os.path.join(data_root, '*', '*', '*.csv'))[0]
+else:
+    f = glob.glob(os.path.join(data_root, '*', '*.csv'))[0]
 n_samples = pd.read_csv(f).values.shape[0]
 
 # Model
@@ -109,11 +114,16 @@ n_samples = pd.read_csv(f).values.shape[0]
 model_out_dim = 2
 
 CLASSES = None
-if isMode(mode, 'e1'):
-    CLASSES = [
-        'al2o3',
-        'sio2',
-    ]
+if isMode(mode, 'e1_e2'):
+    model = E1E2Model(
+        e1_classes = E1_CLASSES,
+        e2_classes = E2_CLASSES,
+        model_id = model_ID,
+        input_dim = n_samples,
+        out_dim = model_out_dim,
+    )
+elif isMode(mode, 'e1'):
+    CLASSES = E1_CLASSES
     model = E1Model(
         classes = CLASSES,
         model_id = model_ID,
