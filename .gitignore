@@ -17,6 +17,7 @@ dataGeneration/*.zip
 PredictionData/Results/
 
 # Cache
+cache/
 __pycache__/*
 .ipynb_checkpoints/*
 debug
