@@ -5,6 +5,7 @@ import glob
 import argparse
 import wandb
 import random
+import pickle
 import math
 import numpy as np
 import pandas as pd
@@ -450,6 +451,7 @@ def run():
     wandb.watch(model, log='all')
 
     config = wandb.config
+    loggs = []
 
     if not cont:
         config.version = version
@@ -515,6 +517,7 @@ def run():
             print("\nepoch {}, lr : {}\n"
                     .format(epoch, [param_group['lr'] for param_group in optimizer.param_groups]))
 
+        loggs.append(logg)
         wandb.log(logg, step=epoch)
 
         if save:
@@ -541,6 +544,15 @@ def run():
                         os.system('rm {}'.format(os.path.join(ckpt_dir, f'e1_best_{e1_cls}_*')))
                         torch.save(model.state_dict(), os.path.join(ckpt_dir, f'e1_best_{e1_cls}_{epoch}.pth'))
 
+    # Write the loggs to pickle
+    pickle_name = os.path.join('cache', 'train',
+                               f'dom_{domain}', mode, version.split('_')[0],
+                               str(model_ID), '{}.pkl'.format(version.split('_')[1]))
+    print(f"\nGenerating pickle file at : {pickle_name}")
+    if not os.path.exists(os.path.dirname(pickle_name)):
+        os.makedirs(os.path.dirname(pickle_name))
+    with open(pickle_name, 'wb') as f:
+        pickle.dump([dict(config), loggs], f)
 
 if __name__=='__main__':
     run()
