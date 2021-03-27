@@ -69,6 +69,13 @@ data_factors = yaml.safe_load(open(os.path.join(DATA_FACTOR_ROOT, '{}.yml'.forma
 data_factors = {key: float(val) for key, val in data_factors.items()}
 
 
+# Extract data_factors
+fr = data_factors['r']
+fA = data_factors['A']
+f_eps = data_factors['eps']
+f_lambd = data_factors['lambd']
+
+
 # Data
 if isMode(mode, 'e1_e2'):
     f_name = 'dataGeneration/csv/Au_interpolated_1.csv'
@@ -227,28 +234,6 @@ elif isMode(mode, 'r'):
     CHECKPOINT_DIR = f'checkpoints/domain_{domain}/{mode}/MassData/{model_id}'
 
 
-# Logging
-if log:
-    if isMode(mode, 'e1'):
-        WANDB_PROJECT_NAME = 'DL Nanophotonics'
-        WANDB_PROJECT_DIR = '/content/wandb/'
-        run_name = f"predict_{mode}_{model_id}_dom{domain}"
-
-        wandb.init(
-            name=run_name, 
-            project=WANDB_PROJECT_NAME, 
-            dir=WANDB_PROJECT_DIR
-        )
-
-        config = wandb.config
-        config.mode = mode
-        config.model_ID = model_id
-        config.prediction_file = PREDICTION_FILE
-        config.e1_classes = E1_CLASSES
-        if isMode(mode, 'e2'):
-            config.e2_classes = E2_CLASSES
-
-
 for version in sorted(os.listdir(CHECKPOINT_DIR)):
     print(version)
     ckpt = os.path.join(CHECKPOINT_DIR, version)
@@ -283,7 +268,7 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
 
                 # Reconstruct spectra from prediction using Maxwell's equations
                 x_pred = getAreaE1E2Class(
-                    list(y_pred.numpy()),
+                    list(y_pred.numpy() / fr),
                     e1_cls=e1_cls,
                     e2_cls=e2_cls,
                     data_file='dataGeneration/csv/Au_interpolated_1.csv',
@@ -365,7 +350,7 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
 
                 # Reconstruct spectra from prediction using Maxwell's equations
                 x_pred = getAreaE1Class(
-                    list(y_pred.numpy()),
+                    list(y_pred.numpy() / fr),
                     e1_cls=e1_cls,
                     data_file='dataGeneration/csv/Au_interpolated_1.csv',
                     data_factors=data_factors,
@@ -433,6 +418,28 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
                 r1*1e9, r2*1e9, r1_pred*1e9/data_factors['r'], r2_pred*1e9/data_factors['r']))
 
     print()
+
+
+# Logging
+if log:
+    if isMode(mode, 'e1'):
+        WANDB_PROJECT_NAME = 'DL Nanophotonics'
+        WANDB_PROJECT_DIR = '/content/wandb/'
+        run_name = f"predict_{mode}_{model_id}_dom{domain}"
+
+        wandb.init(
+            name=run_name, 
+            project=WANDB_PROJECT_NAME, 
+            dir=WANDB_PROJECT_DIR
+        )
+
+        config = wandb.config
+        config.mode = mode
+        config.model_ID = model_id
+        config.prediction_file = PREDICTION_FILE
+        config.e1_classes = E1_CLASSES
+        if isMode(mode, 'e2'):
+            config.e2_classes = E2_CLASSES
 
 
 # Log in wandb and export to xlsx
