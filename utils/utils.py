@@ -193,6 +193,89 @@ def getAreaE1Class(r, e1_cls,
     return A_sca, A_abs
 
 
+def getAreaE1E2Class(r, e1_cls, e2_cls,
+    lambd=None,
+    e1=None,
+    e2=None,
+    eps=None,
+    data_file='dataGeneration/csv/Au_interpolated_1.csv',
+    data_factors=None,
+    ret_mode='all'):
+
+    """
+        Returns cross sections from given r data, e1_cls & e2_cls
+        Args:
+            r : 
+                (dict) : returns single sample area
+                (list of list) : returns multiple samples area as a list of np array
+            e1_cls : string [material name of e1 class]
+            e2_cls : string [material name of e2 class]
+            lambd : wavelength array
+            e1 : e1 array
+            e2 : e2 array
+            eps : eps dict [e1 => array, e2 => array, e3 => complex]
+            data_file : file to read annotations from
+            data_factors : factors to apply in cross sectional data
+            ret_mode : 
+                "all" : returns [A_sca, A_abs]
+                "abs" : returns A_abs
+                "sca" : returns A_sca
+    """
+
+    if data_factors is None:
+        data_factors = defaultdict(lambda: 1)
+
+    multi = False
+    if isinstance(r, list):
+        r = np.array(r)
+        r = {
+            'r1': r[:, 0],
+            'r2': r[:, 1],
+        }
+        multi = True
+
+    if not eps:
+
+        if lambd is None:
+            content = pd.read_csv(data_file)
+            lambd = 1e-9 * content['wl'].values
+            e2 = content['er'].values + 1j*content['ei'].values
+
+        if e1 is None or e2 is None:
+            from data.utils import PermittivityCalculator
+            pc = PermittivityCalculator()
+
+        if e1 is None:
+            e1 = np.array([pc.getEps(wl_, element=e1_cls, mode="complex") for wl_ in lambd*1e6])
+
+        if e2 is None:
+            e2 = np.array([pc.getEpsArr(wl_, element=e2_cls, mode="complex") for wl_ in lambd*1e6])
+
+        eps = {
+            'e1': e1,
+            'e2': e2,
+            'e3': 1.0 + 1j*0.0,
+        }
+
+    A_sca, A_abs = getArea(r, eps, lambd)
+    A_sca, A_abs = A_sca*data_factors['A'], A_abs*data_factors['A']
+
+    if multi:
+        A_sca, A_abs = A_sca.T, A_abs.T
+
+    if ret_mode == 'abs':
+        return A_abs
+    elif ret_mode == 'sca':
+        return A_sca
+    elif ret_mode == 'all':
+        if multi:
+            return [[A_sca_, A_abs_] for (A_sca_, A_abs_) in zip(A_sca, A_abs)]
+        else:
+            return [A_sca, A_abs]
+    else:
+        raise NameError("Unknown ret_mode found - {}".format(ret_mode))
+
+
 def getLossWeights(weights_dict, n):
     """
         Get loss weights from loss_weights config dict
