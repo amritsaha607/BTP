@@ -49,6 +49,7 @@ parser.add_argument(
         r_e1_e2 - predict r with e1 & e2 classes"
 )
 parser.add_argument('--save', type=int, default=1, help='To save model checkpoints or not')
+parser.add_argument('--log', type=int, default=1, help='To log results in wandb or not')
 parser.add_argument('--domain', type=int, default=0, 
     help="Pipeline domain\
         0 -> model predicts (r1, r2)\
@@ -65,6 +66,7 @@ data_factors = args.data_factors
 mode = args.mode
 save = args.save
 domain = args.domain
+log = args.log
 cfg_path = os.path.join('configs/{}.yml'.format(version.replace('_', '/')))
 configs = yaml.safe_load(open(cfg_path))
 
@@ -115,7 +117,7 @@ train_set = AreaDataset(
 train_loader = DataLoader(
     train_set,
     batch_size=batch_size,
-    num_workers=8,
+    num_workers=6,
     collate_fn=collate,
     drop_last=False,
 )
@@ -439,39 +441,61 @@ def run():
         lr_lambda = lambda epoch: sch_factor**epoch
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
-    # Initialize wandb
-    run_name = "train_{}_{}_dom{}".format(version, mode, domain)
-    if args.cont is not None:
-        wandb.init(id=args.wid, name=run_name, 
-            project=WANDB_PROJECT_NAME, dir=WANDB_PROJECT_DIR, resume=True)
-    else:
-        wandb.init(name=run_name, 
-            project=WANDB_PROJECT_NAME, dir=WANDB_PROJECT_DIR)
-
-    wandb.watch(model, log='all')
-
-    config = wandb.config
+    # config = wandb.config
     loggs = []
 
     if not cont:
-        config.version = version
-        config.domain = domain
-        config.model_ID = model_ID
-        config.batch_size = batch_size
-        config.n_epoch = n_epoch
-        config.train_root = train_root
-        config.val_root = val_root
-        config.data_factors = args.data_factors
-        config.optimizer = optimizer_
-        config.lr = learning_rate
-        config.weight_decay = weight_decay
-        config.adam_eps = adam_eps
-        config.amsgrad = adam_amsgrad
-        config.CHECKPOINT_DIR = ckpt_dir
-        config.scheduler = sch_factor if scheduler is not None else None
-        config.cuda = torch.cuda.is_available()
-        config.log_interval = 1
+        config = {
+            'version': version,
+            'domain': domain,
+            'model_ID': model_ID,
+            'batch_size': batch_size,
+            'n_epoch': n_epoch,
+            'train_root': train_root,
+            'val_root': val_root,
+            'data_factors': data_factors,
+            'optimizer': optimizer_,
+            'lr': learning_rate,
+            'weight_decay': weight_decay,
+            'adam_eps': adam_eps,
+            'amsgrad': adam_amsgrad,
+            'CHECKPOINT_DIR': ckpt_dir,
+            'scheduler': sch_factor if scheduler is not None else None,
+            'cuda': torch.cuda.is_available(),
+            'log_interval': 1,
+        }
+        # config.version = version
+        # config.domain = domain
+        # config.model_ID = model_ID
+        # config.batch_size = batch_size
+        # config.n_epoch = n_epoch
+        # config.train_root = train_root
+        # config.val_root = val_root
+        # config.data_factors = args.data_factors
+        # config.optimizer = optimizer_
+        # config.lr = learning_rate
+        # config.weight_decay = weight_decay
+        # config.adam_eps = adam_eps
+        # config.amsgrad = adam_amsgrad
+        # config.CHECKPOINT_DIR = ckpt_dir
+        # config.scheduler = sch_factor if scheduler is not None else None
+        # config.cuda = torch.cuda.is_available()
+        # config.log_interval = 1
     
+    # Initialize wandb
+    run_name = "train_{}_{}_dom{}".format(version, mode, domain)
+    if log:
+        if args.cont is not None:
+            wandb.init(id=args.wid, name=run_name, 
+                project=WANDB_PROJECT_NAME, dir=WANDB_PROJECT_DIR, resume=True)
+        else:
+            wandb.init(name=run_name, 
+                project=WANDB_PROJECT_NAME, dir=WANDB_PROJECT_DIR,
+                config=config)
+
+        wandb.watch(model, log='all')
+
+
     BEST_LOSS = float('inf')
 
     if cont:
@@ -518,7 +542,8 @@ def run():
                     .format(epoch, [param_group['lr'] for param_group in optimizer.param_groups]))
 
         loggs.append(logg)
-        wandb.log(logg, step=epoch)
+        if log:
+            wandb.log(logg, step=epoch)
 
         if save:
             if logg['val_loss'] < BEST_LOSS:
