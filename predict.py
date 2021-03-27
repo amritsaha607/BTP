@@ -279,7 +279,7 @@ for version in sorted(os.listdir(CHECKPOINT_DIR)):
 
             for e1e2_cls in e1e2_classes:
                 [e1_cls, e2_cls] = e1e2_cls.split(',')
-                y_pred = model(x, e1_cls, e2_cls)
+                y_pred = model(x, e1_cls, e2_cls).detach()
 
                 # Reconstruct spectra from prediction using Maxwell's equations
                 x_pred = getAreaE1E2Class(
