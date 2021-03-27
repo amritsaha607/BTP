@@ -205,7 +205,7 @@ def getAreaE1E2Class(r, e1_cls, e2_cls,
     """
         Returns cross sections from given r data, e1_cls & e2_cls
         Args:
-            r : 
+            r : (raw data, given in nanometers)
                 (dict) : returns single sample area
                 (list of list) : returns multiple samples area as a list of np array
             e1_cls : string [material name of e1 class]
