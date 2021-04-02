@@ -15,3 +15,8 @@ E2_CLASSES = [
     'au',
     'ag',
 ]
+E3_CLASSES = [
+    'air',
+    'si',
+    'catio3',
+]

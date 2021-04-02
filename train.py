@@ -13,12 +13,12 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from models.model import BasicModel, E1E2Model, E1Model
+from models.model import BasicModel, E1E2E3Model, E1E2Model, E1Model
 from models.utils.loss import SeperateLoss
 from data.dataset import AreaDataset
 from data.collate import collate
 from utils.utils import getLossWeights, getLabel, isMode, transform_domain
-from utils.parameters import E1_CLASSES, E2_CLASSES
+from utils.parameters import E1_CLASSES, E2_CLASSES, E3_CLASSES
 from utils.decorators import timer
 from utils.operations import dictAdd, dictMultiply
 
@@ -46,7 +46,8 @@ parser.add_argument(
         default - predict all\
         r - predict r\
         r_e1 - predict r with e1 class\
-        r_e1_e2 - predict r with e1 & e2 classes"
+        r_e1_e2 - predict r with e1 & e2 classes\
+        r_e1_e2_e3 - predict r with all three classes"
 )
 parser.add_argument('--save', type=int, default=1, help='To save model checkpoints or not')
 parser.add_argument('--log', type=int, default=1, help='To log results in wandb or not')
@@ -141,7 +142,9 @@ val_loader = DataLoader(
 
 # Samples
 f = None
-if isMode(mode, 'e1_e2'):
+if isMode(mode, 'e1_e2_e3'):
+    f = glob.glob(os.path.join(train_root, '*', '*', '*', '*.csv'))[0]
+elif isMode(mode, 'e1_e2'):
     f = glob.glob(os.path.join(train_root, '*', '*', '*.csv'))[0]
 else:
     f = glob.glob(os.path.join(train_root, '*', '*.csv'))[0]
@@ -160,7 +163,20 @@ n_samples = pd.read_csv(f).values.shape[0]
 #     raise AssertionError("Unknown mode [{}] found!".format(mode))
 model_out_dim = 2
 
-if isMode(mode, 'e1_e2'):
+if isMode(mode, 'e1_e2_e3'):
+    E1E2E3_CLASSES = [f'{e1_cls},{e2_cls},{e3_cls}' for e1_cls in E1_CLASSES
+                      for e2_cls in E2_CLASSES
+                      for e3_cls in E3_CLASSES]
+    model = E1E2E3Model(
+        classes=E1E2E3_CLASSES,
+        model_id=model_ID,
+        input_dim=n_samples,
+        out_dim=model_out_dim,
+    )
+    E1E2E3_BEST_LOSSES = defaultdict(float)
+    for cls_ in E1E2E3_CLASSES:
+        E1E2E3_BEST_LOSSES[cls_] = float('inf')
+elif isMode(mode, 'e1_e2'):
     model = E1E2Model(
         e1_classes = E1_CLASSES,
         e2_classes = E2_CLASSES,
@@ -227,7 +243,11 @@ def train(epoch, loader, optimizer, metrics=[],
         raise ValueError("You can't add {} topup in {} mode"
             .format("loss_split_re", mode))
 
-    if isMode(mode, 'e1_e2'):
+    if isMode(mode, 'e1_e2_e3'):
+        e1e2e3_losses = defaultdict(float) # key => "<e1_cls>,<e2_cls>,<e3_cls>", value => loss
+        e1e2e3_loss_counts = defaultdict(float) # key => "<e1_cls>,<e2_cls>,<e3_cls>"
+
+    elif isMode(mode, 'e1_e2'):
         e1e2_losses = defaultdict(float) # key => "<e1_cls>,<e2_cls>", value => loss
         e1e2_loss_counts = defaultdict(float) # key => "<e1_cls>,<e2_cls>"
 
@@ -246,7 +266,9 @@ def train(epoch, loader, optimizer, metrics=[],
         # y = getLabel(y, mode=mode)
 
         # For e1, e2 modes, break x into parts
-        if isMode(mode, 'e1_e2'):
+        if isMode(mode, 'e1_e2_e3'):
+            x, x_e1, x_e2, x_e3 = x
+        elif isMode(mode, 'e1_e2'):
             x, x_e1, x_e2 = x
         elif isMode(mode, 'e1'):
             x, x_e1 = x
@@ -257,7 +279,9 @@ def train(epoch, loader, optimizer, metrics=[],
 
         y = transform_domain(y, domain=domain)
 
-        if isMode(mode, 'e1_e2'):
+        if isMode(mode, 'e1_e2_e3'):
+            y_pred = model(x, x_e1, x_e2, x_e3)
+        elif isMode(mode, 'e1_e2'):
             y_pred = model(x, x_e1, x_e2)
         elif isMode(mode, 'e1'):
             y_pred = model(x, x_e1)
@@ -283,10 +307,12 @@ def train(epoch, loader, optimizer, metrics=[],
             tot_loss += loss.item()
             loss_count += 1
 
-            if isMode(mode, 'e1_e2'):
+            if isMode(mode, 'e1_e2_e3'):
+                e1e2_losses[f"training_loss_{x_e1},{x_e2},{x_e3}"] += loss.item()
+                e1e2_loss_counts[f"training_loss_{x_e1},{x_e2},{x_e3}"] += 1
+            elif isMode(mode, 'e1_e2'):
                 e1e2_losses[f"training_loss_{x_e1},{x_e2}"] += loss.item()
                 e1e2_loss_counts[f"training_loss_{x_e1},{x_e2}"] += 1
-
             elif isMode(mode, 'e1'):
                 e1_losses[f"training_loss_{x_e1}"] += loss.item()
                 e1_loss_counts[f"training_loss_{x_e1}"] += 1
@@ -304,7 +330,11 @@ def train(epoch, loader, optimizer, metrics=[],
     }
 
     # Classwise loss of different materials with different e1, e2
-    if isMode(mode, 'e1_e2'):
+    if isMode(mode, 'e1_e2_e3'):
+        for key in e1e2e3_losses:
+            e1e2e3_losses[key] /= e1e2e3_loss_counts[key]
+        logg.update(e1e2e3_losses)
+    elif isMode(mode, 'e1_e2'):
         for key in e1e2_losses:
             e1e2_losses[key] /= e1e2_loss_counts[key]
         logg.update(e1e2_losses)
@@ -332,10 +362,12 @@ def validate(epoch, loader, metrics=[],
         metrics : metrics to log
     """
 
-    if isMode(mode, 'e1_e2'):
+    if isMode(mode, 'e1_e2_e3'):
+        e1e2e3_losses = defaultdict(float) # key => "<e1_cls>,<e2_cls>,<e3_cls>", value => loss
+        e1e2e3_loss_counts = defaultdict(float) # key => "<e1_cls>,<e2_cls>,<e3_cls>"
+    elif isMode(mode, 'e1_e2'):
         e1e2_losses = defaultdict(float) # key => "<e1_cls>,<e2_cls>", value => loss
         e1e2_loss_counts = defaultdict(float) # key => "<e1_cls>,<e2_cls>"
-
     elif isMode(mode, 'e1'):
         e1_losses = defaultdict(float)
         e1_loss_counts = defaultdict(float)
@@ -351,7 +383,9 @@ def validate(epoch, loader, metrics=[],
         # y = getLabel(y, mode=mode)
 
         # For e1, e2 modes, break x into parts
-        if isMode(mode, 'e1_e2'):
+        if isMode(mode, 'e1_e2_e3'):
+            x, x_e1, x_e2, x_e3 = x
+        elif isMode(mode, 'e1_e2'):
             x, x_e1, x_e2 = x
         elif isMode(mode, 'e1'):
             x, x_e1 = x
@@ -362,7 +396,9 @@ def validate(epoch, loader, metrics=[],
 
         y = transform_domain(y, domain=domain)
 
-        if isMode(mode, 'e1_e2'):
+        if isMode(mode, 'e1_e2_e3'):
+            y_pred = model(x, x_e1, x_e2, x_e3)
+        elif isMode(mode, 'e1_e2'):
             y_pred = model(x, x_e1, x_e2)
         elif isMode(mode, 'e1'):
             y_pred = model(x, x_e1)
@@ -383,10 +419,12 @@ def validate(epoch, loader, metrics=[],
             tot_loss += loss.item()
             loss_count += 1
 
-            if isMode(mode, 'e1_e2'):
+            if isMode(mode, 'e1_e2_e3'):
+                e1e2_losses[f"val_loss_{x_e1},{x_e2},{x_e3}"] += loss.item()
+                e1e2_loss_counts[f"val_loss_{x_e1},{x_e2},{x_e3}"] += 1
+            elif isMode(mode, 'e1_e2'):
                 e1e2_losses[f"val_loss_{x_e1},{x_e2}"] += loss.item()
                 e1e2_loss_counts[f"val_loss_{x_e1},{x_e2}"] += 1
-
             elif isMode(mode, 'e1'):
                 e1_losses[f"val_loss_{x_e1}"] += loss.item()
                 e1_loss_counts[f"val_loss_{x_e1}"] += 1
@@ -404,7 +442,11 @@ def validate(epoch, loader, metrics=[],
     }
 
     # Classwise loss of different materials with different e1, e2
-    if isMode(mode, 'e1_e2'):
+    if isMode(mode, 'e1_e2_e3'):
+        for key in e1e2e3_losses:
+            e1e2e3_losses[key] /= e1e2e3_loss_counts[key]
+        logg.update(e1e2e3_losses)
+    elif isMode(mode, 'e1_e2'):
         for key in e1e2_losses:
             e1e2_losses[key] /= e1e2_loss_counts[key]
         logg.update(e1e2_losses)
@@ -554,7 +596,18 @@ def run():
             os.system('rm {}'.format(os.path.join(ckpt_dir, 'latest_*.pth')))
             torch.save(model.state_dict(), os.path.join(ckpt_dir, 'latest_{}.pth'.format(epoch)))
 
-            if isMode(mode, 'e1_e2'):
+            if isMode(mode, 'e1_e2_e3'):
+                for e1_cls in E1_CLASSES:
+                    for e2_cls in E2_CLASSES:
+                        for e3_cls in E3_CLASSES:
+                            cls_ = f'{e1_cls},{e2_cls},{e3_cls}'
+                            if logg[f"val_loss_{cls_}"] < E1E2_BEST_LOSSES[cls_]:
+                                E1E2_BEST_LOSSES[cls_] = logg[f"val_loss_{cls_}"]
+                                os.system('rm {}'.format(os.path.join(ckpt_dir, f'e1e2_best_{e1_cls}_{e2_cls}_{e3_cls}_*')))
+                                torch.save(model.state_dict(), os.path.join(ckpt_dir, f'e1e2_best_{e1_cls}_{e2_cls}_{e3_cls}_{epoch}.pth'))
+
+           
+            elif isMode(mode, 'e1_e2'):
                 for e1_cls in E1_CLASSES:
                     for e2_cls in E2_CLASSES:
                         if logg[f"val_loss_{e1_cls},{e2_cls}"] < E1E2_BEST_LOSSES[f"{e1_cls},{e2_cls}"]:

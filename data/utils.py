@@ -42,7 +42,13 @@ def extractData(filename,
         f_r*df['r2'][0],
     ])
 
-    if isMode(mode, 'e1_e2'):
+    if isMode(mode, 'e1_e2_e3'):
+        # Extract e1_mat, e2_mat & e3_mat from filename
+        info = filename.split('/')
+        e1_mat, e2_mat, e3_mat = info[-4], info[-3], info[-2]
+        x = (x, e1_mat, e2_mat, e3_mat)
+
+    elif isMode(mode, 'e1_e2'):
         # Extract e1_mat & e2_mat from filename
         info = filename.split('/')
         e1_mat, e2_mat = info[-3], info[-2]
@@ -140,3 +146,14 @@ class PermittivityCalculator:
             return (er, ei)
         else:
             return NameError(f"Unknown mode {mode} found")
+
+    def getEpsVal(self, element):
+        """
+            Returns constant epsilon value
+        """
+        if element == "air":
+            return 1.00 + 1j*0.00
+        elif element == "si":
+            return 3.88**2
+        elif element == "catio3":
+            return 1.95**2

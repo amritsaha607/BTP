@@ -33,7 +33,24 @@ class AreaDataset(Dataset):
         self.factors = factors
         self.input_key = input_key
         self.mode = mode
-        
+
+        if isMode(self.mode, 'e1_e2_e3'):
+            for format_ in formats:
+                for e1_mat in os.listdir(root):
+                    e1_root = os.path.join(root, e1_mat)
+                    for e2_mat in os.listdir(e1_root):
+                        e2_root = os.path.join(e1_root, e2_mat)
+                        for e3_mat in os.listdir(e2_root):
+                            e3_root = os.path.join(e2_root, e3_mat)
+                            files = glob.glob(os.path.join(e3_root, f"*{format_}"))
+                            self.files += files
+
+                            if shuffle:
+                                random.shuffle(files)
+
+                            if len(files) % batch_size != 0:
+                                self.files += [None] * int(batch_size - len(files) % batch_size)
+
         if isMode(self.mode, 'e1_e2'):
             for format_ in formats:
                 for e1_mat in os.listdir(root):
@@ -64,15 +81,17 @@ class AreaDataset(Dataset):
                     if isMode(self.mode, 'e1') and (len(files) % batch_size != 0):
                         self.files += [None] * int(batch_size - len(files) % batch_size)
 
-        self.e1_materialCode = None
-        if isMode(self.mode, 'e1'):
-            self.e1_materialCode = {material.lower(): i for i, material in enumerate(os.listdir(os.path.join(root)))}
+        # self.e1_materialCode = None
+        # if isMode(self.mode, 'e1'):
+        #     self.e1_materialCode = {material.lower(): i for i, material in enumerate(os.listdir(os.path.join(root)))}
 
     def __getitem__(self, index):
         file = self.files[index]
 
         if file == None:
-            if isMode(self.mode, 'e1_e2'):
+            if isMode(self.mode, 'e1_e2_e3'):
+                return (None, None, None, None), None
+            elif isMode(self.mode, 'e1_e2'):
                 return (None, None, None), None
             elif isMode(self.mode, 'e1'):
                 return (None, None), None
@@ -82,7 +101,7 @@ class AreaDataset(Dataset):
             input_key=self.input_key,
             mode=self.mode,
             factors=self.factors,
-            e1_matCode=self.e1_materialCode
+            # e1_matCode=self.e1_materialCode
         )
         return x, y
 

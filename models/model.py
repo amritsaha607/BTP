@@ -640,3 +640,76 @@ class E1E2Model(nn.Module):
                 )
             self.model[e1_cls] = nn.ModuleDict(self.model[e1_cls])
         self.model = nn.ModuleDict(self.model)
+
+
+class E1E2E3Model(nn.Module):
+
+    """
+        Model for e1, e2 & e3 data
+    """
+
+    def __init__(self, classes, model_id, input_dim=98, out_dim=2):
+
+        """
+            classes : Different e1, e2, e3 parameter classes (list)
+            model_ids : which model to pick for which class (list of BasicModel / BasicModel)
+        """
+
+        super(E1E2E3Model, self).__init__()
+        self.classes = classes
+        self.n_classes = len(classes)
+        self.model_id = model_id
+        self.input_dim = input_dim
+        self.out_dim = out_dim
+
+        if self.model_id == 1:
+            model_ids = 7
+            self.bakeModel(model_ids=model_ids)
+
+        elif self.model_id == 2:
+            model_ids = 8
+            self.bakeModel(model_ids=model_ids)
+        
+        elif self.model_id == 3:
+            model_ids = 9
+            self.bakeModel(model_ids=model_ids)
+
+        elif self.model_id == 4:
+            model_ids = 10
+            self.bakeModel(model_ids=model_ids)
+
+        elif self.model_id == 5:
+            model_ids = 11
+            self.bakeModel(model_ids=model_ids)
+
+        elif self.model_id == 6:
+            model_ids = 12
+            self.bakeModel(model_ids=model_ids)
+
+        elif self.model_id == 7:
+            model_ids = 13
+            self.bakeModel(model_ids=model_ids)
+
+        elif self.model_id == 8:
+            model_ids = 14
+            self.bakeModel(model_ids=model_ids)
+
+    def cuda(self, *args, **kwargs):
+        super(E1E2E3Model, self).cuda()
+        self.model.cuda()
+
+    def forward(self, x, e1_mat, e2_mat, e3_mat):
+        y = self.model[f'{e1_mat},{e2_mat},{e3_mat}'](x)
+        return y
+
+    def bakeModel(self, model_ids):
+        """
+            Bake E1E2E3Model from BasicModel class
+        """
+        if not isinstance(model_ids, list):
+            model_ids = [model_ids] * self.n_classes
+
+        self.model = {}
+        for class_, model_id in zip(self.classes, model_ids):
+            self.model[class_] = BasicModel(input_dim=self.input_dim, out_dim=self.out_dim, model_id=model_id)
+        self.model = nn.ModuleDict(self.model)
