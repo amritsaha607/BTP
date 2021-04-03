@@ -1,4 +1,5 @@
 import os
+import torch
 from matplotlib.pyplot import axis
 import numpy as np
 import pandas as pd
@@ -32,8 +33,16 @@ def getEps(e1, e2, params, mode='P'):
     # For multiple r1 & r2 values, we'll have to do matrix multiplication
     # as P will be an array as well
     if isinstance(P, Iterable):
-        ea = np.outer(e1, (3-2*P)) + 2*np.outer(e2, P)
-        eb = np.outer(e1, P) + np.outer(e2, 3-P)
+        if torch.is_tensor(e1):
+            if P.ndim==0:
+                ea = e1*(3-2*P) + 2*e2*P
+                eb = e1*P + e2*(3-P)
+            else:
+                ea = torch.outer(e1, (3-2*P)) + 2*torch.outer(e2, P)
+                eb = torch.outer(e1, P) + torch.outer(e2, 3-P)
+        else:
+            ea = np.outer(e1, (3-2*P)) + 2*np.outer(e2, P)
+            eb = np.outer(e1, P) + np.outer(e2, 3-P)
 
     # For a single (r1, r2) sample pair, ea & eb will be same as e1 & e2
     else:
@@ -74,8 +83,12 @@ def getAlpha(eps, r, baked=False):
     # In that case to execute following calculations, we'll
     # have to unsqueeze e1 & e2 as 2D vectors
     if ea.ndim == 2:
-        e1 = np.expand_dims(e1, axis=1)
-        e2 = np.expand_dims(e2, axis=1)
+        if torch.is_tensor(e1):
+            e1 = torch.unsqueeze(e1, dim=1)
+            e2 = torch.unsqueeze(e2, dim=1)
+        else:
+            e1 = np.expand_dims(e1, axis=1)
+            e2 = np.expand_dims(e2, axis=1)
 
     alpha = 4*np.pi*EPS_0*(r2**3) * (e2*ea-e3*eb)/(e2*ea+2*e3*eb)
     return alpha
@@ -107,7 +120,10 @@ def getArea(r, eps, lambd, write=None, f_out=None):
 
     # Scattering cross section
     if alpha.ndim == 2:
-        k = np.expand_dims(k, axis=1)
+        if torch.is_tensor(k):
+            k = torch.unsqueeze(k, dim=1)
+        else:
+            k = np.expand_dims(k, axis=1)
     area_sca = (1/(6*np.pi*(EPS_0**2))) * (k**4) * (abs(alpha)**2)
     
     # Absorption cross section
