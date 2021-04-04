@@ -96,7 +96,7 @@ def getAlpha(eps, r, baked=False):
     return alpha
 
 
-def getArea(r, eps, lambd, write=None, f_out=None):
+def getArea(r, eps, lambd, write=None, f_out=None, ret='default'):
     '''
         Returns area from radius & epsilon input
         Args: [All args are in SI unit]
@@ -166,5 +166,12 @@ def getArea(r, eps, lambd, write=None, f_out=None):
         data = pd.DataFrame(data)
         data.to_csv(f_out, index=False)
     
-    return area_sca, area_abs
+    if ret=='default':
+        return area_sca, area_abs
+    elif ret=='A_abs' or ret=='abs':
+        return area_abs
+    elif ret=='A_sca' or ret=='sca':
+        return area_sca
+    else:
+        return TypeError(f"Unknown return type - {ret} found")
 

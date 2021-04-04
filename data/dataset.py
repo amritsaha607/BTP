@@ -21,6 +21,7 @@ class AreaDataset(Dataset):
     def __init__(self, 
         root='dataGeneration/data/', formats=['.csv'], factors=None, input_key='A_tot',
         mode='r',
+        domain=0,
         shuffle=True,
         batch_size=None):
 
@@ -33,6 +34,7 @@ class AreaDataset(Dataset):
         self.factors = factors
         self.input_key = input_key
         self.mode = mode
+        self.domain = domain
 
         if isMode(self.mode, 'e1_e2_e3'):
             for format_ in formats:
@@ -51,7 +53,7 @@ class AreaDataset(Dataset):
                             if len(files) % batch_size != 0:
                                 self.files += [None] * int(batch_size - len(files) % batch_size)
 
-        if isMode(self.mode, 'e1_e2'):
+        elif isMode(self.mode, 'e1_e2'):
             for format_ in formats:
                 for e1_mat in os.listdir(root):
                     e1_root = os.path.join(root, e1_mat)
@@ -81,6 +83,8 @@ class AreaDataset(Dataset):
                     if isMode(self.mode, 'e1') and (len(files) % batch_size != 0):
                         self.files += [None] * int(batch_size - len(files) % batch_size)
 
+        self.setLambda()
+
         # self.e1_materialCode = None
         # if isMode(self.mode, 'e1'):
         #     self.e1_materialCode = {material.lower(): i for i, material in enumerate(os.listdir(os.path.join(root)))}
@@ -89,17 +93,23 @@ class AreaDataset(Dataset):
         file = self.files[index]
 
         if file == None:
+            y = None
             if isMode(self.mode, 'e1_e2_e3'):
-                return (None, None, None, None), None
+                x = (None, None, None, None)
             elif isMode(self.mode, 'e1_e2'):
-                return (None, None, None), None
+                x = (None, None, None)
             elif isMode(self.mode, 'e1'):
-                return (None, None), None
+                x = (None, None)
+
+            if self.domain == 2:
+                x = (x, None)
+            return x, y
 
         x, y = extractData(
             file, 
             input_key=self.input_key,
             mode=self.mode,
+            domain=self.domain,
             factors=self.factors,
             # e1_matCode=self.e1_materialCode
         )
@@ -107,3 +117,7 @@ class AreaDataset(Dataset):
 
     def __len__(self):
         return len(self.files)
+
+    def setLambda(self):
+        file = self.files[0]
+        self.lambd = torch.tensor(pd.read_csv(file)['lambd'].values)

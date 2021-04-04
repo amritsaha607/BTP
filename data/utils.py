@@ -9,6 +9,7 @@ from utils.utils import isMode
 def extractData(filename, 
             input_key='A_tot',
             mode='r',
+            domain=0,
             e1_matCode=None,
             factors={'r': 1e9, 'eps': 1e7, 'lambd': 1e9, 'A': 1e17}):
     '''
@@ -58,7 +59,16 @@ def extractData(filename,
         mat = filename.split('/')[-2] # material name
         x = (x, mat) # pass e1_id of the material in input
         # y_e1 = oneHot(e1_matCode[mat], len(e1_matCode.keys()))
-    
+
+
+    if domain == 2:
+        eps = {
+            'e1': df['eps_1'].values,
+            'e2': df['eps_2'].values,
+            'e3': df['eps_3'].values,
+        }
+        x = (x, eps)
+
     return x, y
 
 

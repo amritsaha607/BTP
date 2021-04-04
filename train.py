@@ -1,4 +1,6 @@
 from collections import defaultdict
+from data.utils import PermittivityCalculator
+from dataGeneration.utils import getArea
 import yaml
 import os
 import glob
@@ -54,7 +56,8 @@ parser.add_argument('--log', type=int, default=1, help='To log results in wandb 
 parser.add_argument('--domain', type=int, default=0, 
     help="Pipeline domain\
         0 -> model predicts (r1, r2)\
-        1 -> model predicts (r1/r2, r2-r1)")
+        1 -> model predicts (r1/r2, r2-r1)\
+        2 -> model predicts (r1, r2), loss is calculated as MSE over A_abs")
 args = parser.parse_args()
 
 
@@ -105,13 +108,14 @@ if torch.cuda.is_available():
 DATA_FACTOR_ROOT = 'configs/data_factors'
 data_factors = yaml.safe_load(open(os.path.join(DATA_FACTOR_ROOT, '{}.yml'.format(data_factors))))
 data_factors = {key: float(val) for key, val in data_factors.items()}
-collate = collate(mode)
+collate = collate(mode, domain=domain)
 train_set = AreaDataset(
     root=train_root,
     formats=['.csv'],
     factors=data_factors,
     input_key=input_key,
     mode=mode,
+    domain=domain,
     shuffle=True,
     batch_size=batch_size,
 )
@@ -128,6 +132,7 @@ val_set = AreaDataset(
     factors=data_factors,
     input_key=input_key,
     mode=mode,
+    domain=domain,
     shuffle=True,
     batch_size=batch_size,
 )
@@ -226,6 +231,8 @@ if cont is not None:
 if torch.cuda.is_available():
     model.cuda()
     criterion.cuda()
+    train_set.lambd = train_set.lambd.cuda()
+    val_set.lambd = val_set.lambd.cuda()
 
 # Training Function
 @timer
@@ -265,6 +272,10 @@ def train(epoch, loader, optimizer, metrics=[],
 
         # y = getLabel(y, mode=mode)
 
+        # For domain 2, seperate eps first
+        if domain == 2:
+            x, eps = x
+
         # For e1, e2 modes, break x into parts
         if isMode(mode, 'e1_e2_e3'):
             x, x_e1, x_e2, x_e3 = x
@@ -276,8 +287,12 @@ def train(epoch, loader, optimizer, metrics=[],
         if torch.cuda.is_available():
             x = x.cuda()
             y = y.cuda()
+            if domain == 2:
+                eps = {key: val.cuda() for key, val in eps.items()}
 
-        y = transform_domain(y, domain=domain)
+        # y is needed only in domain 0 & 1
+        if domain != 2:
+            y = transform_domain(y, domain=domain)
 
         if isMode(mode, 'e1_e2_e3'):
             y_pred = model(x, x_e1, x_e2, x_e3)
@@ -288,10 +303,23 @@ def train(epoch, loader, optimizer, metrics=[],
         else:
             y_pred = model(x)
 
-        loss = criterion(y_pred, y,
-                         mode=loss_mode,
-                         run='train',
-                         weights=loss_weights)
+        # For domain 2, x_pred is all you need to get loss
+        if domain == 2:
+            r = {
+                'r1': y_pred[:, 0] * data_factors['r'] * 1e-9,
+                'r2': y_pred[:, 1] * data_factors['r'] * 1e-9,
+            }
+            x_pred = getArea(r, eps, train_set.lambd, ret=input_key).T
+            loss = criterion(x_pred, x,
+                             mode=loss_mode,
+                             run='train',
+                             weights=loss_weights)
+
+        else:
+            loss = criterion(y_pred, y,
+                             mode=loss_mode,
+                             run='train',
+                             weights=loss_weights)
         loss.backward()
         optimizer.step()
 
@@ -381,6 +409,10 @@ def validate(epoch, loader, metrics=[],
     for batch_idx, (x, y) in enumerate(loader):
 
         # y = getLabel(y, mode=mode)
+        
+        # For domain 2, seperate eps first
+        if domain == 2:
+            x, eps = x
 
         # For e1, e2 modes, break x into parts
         if isMode(mode, 'e1_e2_e3'):
@@ -393,8 +425,12 @@ def validate(epoch, loader, metrics=[],
         if torch.cuda.is_available():
             x = x.cuda()
             y = y.cuda()
+            if domain == 2:
+                eps = {key: val.cuda() for key, val in eps.items()}
 
-        y = transform_domain(y, domain=domain)
+        # y is needed only in domain 0 & 1
+        if domain != 2:
+            y = transform_domain(y, domain=domain)
 
         if isMode(mode, 'e1_e2_e3'):
             y_pred = model(x, x_e1, x_e2, x_e3)
@@ -405,7 +441,22 @@ def validate(epoch, loader, metrics=[],
         else:
             y_pred = model(x)
 
-        loss = criterion(y_pred, y, mode=loss_mode, run='val', weights=loss_weights)
+        # For domain 2, x_pred is all you need to get loss
+        if domain == 2:
+            r = {
+                'r1': y_pred[:, 0] * data_factors['r'] * 1e-9,
+                'r2': y_pred[:, 1] * data_factors['r'] * 1e-9,
+            }
+            x_pred = getArea(r, eps, train_set.lambd, ret=input_key).T
+            loss = criterion(x_pred, x,
+                             mode=loss_mode,
+                             run='val',
+                             weights=loss_weights)
+        else:
+            loss = criterion(y_pred, y,
+                             mode=loss_mode,
+                             run='val',
+                             weights=loss_weights)
 
         if 'loss_split_re' in topups:
             loss_split = criterion(
@@ -606,7 +657,6 @@ def run():
                                 os.system('rm {}'.format(os.path.join(ckpt_dir, f'e1e2_best_{e1_cls}_{e2_cls}_{e3_cls}_*')))
                                 torch.save(model.state_dict(), os.path.join(ckpt_dir, f'e1e2_best_{e1_cls}_{e2_cls}_{e3_cls}_{epoch}.pth'))
 
-           
             elif isMode(mode, 'e1_e2'):
                 for e1_cls in E1_CLASSES:
                     for e2_cls in E2_CLASSES:
