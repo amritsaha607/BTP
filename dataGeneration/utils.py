@@ -86,6 +86,8 @@ def getAlpha(eps, r, baked=False):
         if torch.is_tensor(e1):
             e1 = torch.unsqueeze(e1, dim=1)
             e2 = torch.unsqueeze(e2, dim=1)
+            if e3.ndim == 1:
+                e3 = torch.unsqueeze(e3, dim=1)
         else:
             e1 = np.expand_dims(e1, axis=1)
             e2 = np.expand_dims(e2, axis=1)
