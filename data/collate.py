@@ -59,13 +59,29 @@ def collateE1E2Dom2(data):
 
     return ((x, x_e1, x_e2), eps), y
 
+def collateE1E2E3(data):
+    """
+        Collate for E1E2E3 data
+    """
+    batch_size = len(data)
+
+    x = torch.tensor([data[i][0][0] for i in range(batch_size) if data[i][0][0] is not None], dtype=torch.float)
+    x_e1 = np.unique([data[i][0][1] for i in range(batch_size) if data[i][0][1] is not None])[0]
+    x_e2 = np.unique([data[i][0][2] for i in range(batch_size) if data[i][0][2] is not None])[0]
+    x_e3 = np.unique([data[i][0][3] for i in range(batch_size) if data[i][0][3] is not None])[0]
+    y = torch.tensor([data[i][1] for i in range(batch_size) if data[i][1] is not None], dtype=torch.float)
+
+    return (x, x_e1, x_e2, x_e3), y
+
 def collate(mode='r', domain=0):
-    if isMode(mode, 'e1_e2'):
+    if isMode(mode, 'e1_e2_e3'):
+        return collateE1E2E3
+    elif isMode(mode, 'e1_e2'):
         if domain==0:
             return collateE1E2
         elif domain==2:
             return collateE1E2Dom2
-    if isMode(mode, 'e1'):
+    elif isMode(mode, 'e1'):
         return collateE1
     elif isMode(mode, 'r'):
         return collateR

@@ -336,8 +336,8 @@ def train(epoch, loader, optimizer, metrics=[],
             loss_count += 1
 
             if isMode(mode, 'e1_e2_e3'):
-                e1e2_losses[f"training_loss_{x_e1},{x_e2},{x_e3}"] += loss.item()
-                e1e2_loss_counts[f"training_loss_{x_e1},{x_e2},{x_e3}"] += 1
+                e1e2e3_losses[f"training_loss_{x_e1},{x_e2},{x_e3}"] += loss.item()
+                e1e2e3_loss_counts[f"training_loss_{x_e1},{x_e2},{x_e3}"] += 1
             elif isMode(mode, 'e1_e2'):
                 e1e2_losses[f"training_loss_{x_e1},{x_e2}"] += loss.item()
                 e1e2_loss_counts[f"training_loss_{x_e1},{x_e2}"] += 1
@@ -471,8 +471,8 @@ def validate(epoch, loader, metrics=[],
             loss_count += 1
 
             if isMode(mode, 'e1_e2_e3'):
-                e1e2_losses[f"val_loss_{x_e1},{x_e2},{x_e3}"] += loss.item()
-                e1e2_loss_counts[f"val_loss_{x_e1},{x_e2},{x_e3}"] += 1
+                e1e2e3_losses[f"val_loss_{x_e1},{x_e2},{x_e3}"] += loss.item()
+                e1e2e3_loss_counts[f"val_loss_{x_e1},{x_e2},{x_e3}"] += 1
             elif isMode(mode, 'e1_e2'):
                 e1e2_losses[f"val_loss_{x_e1},{x_e2}"] += loss.item()
                 e1e2_loss_counts[f"val_loss_{x_e1},{x_e2}"] += 1
@@ -652,8 +652,8 @@ def run():
                     for e2_cls in E2_CLASSES:
                         for e3_cls in E3_CLASSES:
                             cls_ = f'{e1_cls},{e2_cls},{e3_cls}'
-                            if logg[f"val_loss_{cls_}"] < E1E2_BEST_LOSSES[cls_]:
-                                E1E2_BEST_LOSSES[cls_] = logg[f"val_loss_{cls_}"]
+                            if logg[f"val_loss_{cls_}"] < E1E2E3_BEST_LOSSES[cls_]:
+                                E1E2E3_BEST_LOSSES[cls_] = logg[f"val_loss_{cls_}"]
                                 os.system('rm {}'.format(os.path.join(ckpt_dir, f'e1e2_best_{e1_cls}_{e2_cls}_{e3_cls}_*')))
                                 torch.save(model.state_dict(), os.path.join(ckpt_dir, f'e1e2_best_{e1_cls}_{e2_cls}_{e3_cls}_{epoch}.pth'))
 
