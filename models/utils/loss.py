@@ -20,7 +20,7 @@ class SeperateLoss(nn.Module):
             Args:
                 y_pred, y : 2n+6 X 1 tensors
                 mode : 
-                    'MSE' : returns MSELoss
+                    'mse' : returns MSELoss
                     'split': returns splitted loss for all params as a dict
                                 (r1, r2, e1, e2, e3)
                     'split_re': returns splitted loss for r & e as a dict
