@@ -11,6 +11,8 @@ dataGeneration/data_prev/
 dataGeneration/mass_data/
 dataGeneration/test_data_eps/
 dataGeneration/E1Data/
+dataGeneration/E1E2Data/
+dataGeneration/E1E2E3Data/
 dataGeneration/*.zip
 
 # Prediction Results
