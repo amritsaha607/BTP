@@ -36,3 +36,42 @@ x_pred &rarr; Predicted Spectra [samples of A_abs_pred] <br/>
 
 ![plot](./readme_images/dataGeneration.png)
 Vary <i>r</i> and <i>eps</i> to generate data with multiple radii pairs and multiple eps values
+
+In all the below configurations, r1 is varied from 5nm to 50nm and r2 is varied from (r1+1) nm to (r1+100) nm for training dataset [only integer values]. For validation dataset, in each class combination, 250 (r1, r2) pairs are generated randomly with value constraints r1 ε [5, 50], r2 ε [r1+1, r2+100].
+
+### E1Data
+
+Directory structure 
+
+    dataGeneration/E1Data/{train/val}/{e1_cls}/{filecounter}.csv
+
+To Generate E1Data, run the following command
+```bash
+cd dataGeneration/scripts/
+python3 eps1.py
+```
+
+### E1E2Data
+
+Directory structure 
+
+    dataGeneration/E1E2Data/{train/val}/{e1_cls}/{e2_cls}/{filecounter}.csv
+
+To Generate E1E2Data, run the following command
+```bash
+cd dataGeneration/scripts/
+python3 e1e2.py
+```
+
+### E1E2E3Data
+
+Directory structure 
+
+    dataGeneration/E1E2E3Data/{train/val}/{e1_cls}/{e2_cls}/{e3_cls}/{filecounter}.csv
+
+To Generate E1E2E3Data, run the following command
+```bash
+cd dataGeneration/scripts/
+python3 e1e2e3.py
+```
+
