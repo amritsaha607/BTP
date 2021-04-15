@@ -166,6 +166,17 @@ def getArea(r, eps, lambd, write=None, f_out=None, ret='default'):
         data = pd.DataFrame(data)
         data.to_csv(f_out, index=False)
     
+    # Mask out negative values of radii &
+    # points where r1 > r2
+    if alpha.ndim == 2:
+        area_abs.T[r['r1']<0] = 0
+        area_abs.T[r['r2']<0] = 0
+        area_abs.T[r['r1']>r['r2']] = 0
+        area_sca.T[r['r1']<0] = 0
+        area_sca.T[r['r2']<0] = 0
+        area_sca.T[r['r1']>r['r2']] = 0
+
+
     if ret=='default':
         return area_sca, area_abs
     elif ret=='A_abs' or ret=='abs':
