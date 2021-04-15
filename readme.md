@@ -38,7 +38,7 @@ x_pred &rarr; Predicted Spectra [samples of A_abs_pred] <br/>
 <br/>
 Vary <i>r</i> and <i>eps</i> to generate data with multiple radii pairs and multiple eps values
 
-In all the below configurations, r1 is varied from 5nm to 50nm and r2 is varied from (r1+1) nm to (r1+100) nm for training dataset [only integer values]. For validation dataset, in each class combination, 250 (r1, r2) pairs are generated randomly with value constraints r1 ε [5, 50], r2 ε [r1+1, r2+100].
+In all the below configurations, r1 is varied from 5nm to 50nm and r2 is varied from (r1+1) nm to (r1+100) nm for training dataset [only integer values]. For validation dataset, in each class combination, 250 (r1, r2) pairs are generated randomly with value constraints r1 ∈ [5, 50], r2 ∈ [r1+1, r2+100].
 
 ### E1Data
 (e1 : (al2o3, sio2), e2 : au, e3 : air)
