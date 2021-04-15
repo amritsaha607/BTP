@@ -10,7 +10,29 @@ Throughout the experiment, A_abs is plotted w.r.t. wavelength with an wavelength
 lambd &rarr; Wavelength (fixed throughout experiment) <br/>
 lambd = [180, 181, ......, 1940] <br/>
 
+r &rarr; radii values (dict) <br/>
+eps &rarr; permittivity values (dict)
+```python
+r = {
+    'r1': r1, 
+    'r2': r2,
+}
+eps = {
+    'e1': e1,
+    'e2': e2,
+    'e3': e3,
+}
+```
 x &rarr; Input spectra [samples of A_abs] <br/>
 y &rarr; Ground truth radii values [r1, r2] <br/>
 y_pred &rarr; Predicted radii values [r1_pred, r2_pred] <br/>
 x_pred &rarr; Predicted Spectra [samples of A_abs_pred] <br/>
+
+<br/>
+
+# Pipeine
+
+## Data Generation
+
+![plot](./readme_images/dataGeneration.png)
+Vary <i>r</i> and <i>eps</i> to generate data with multiple radii pairs and multiple eps values
