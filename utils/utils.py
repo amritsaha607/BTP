@@ -375,3 +375,29 @@ def transform_domain(y, domain=0, reverse_=False):
         else:
             raise ValueError(f"Unknown domain {domain}")
 
+
+def getPeakInfo(A, lambd, shift=150):
+    """
+        Returns peak position and wavelength value where peak occurs
+        Args:
+            A : Cross section array (torch / numpy)
+            lambd : wavelength array (torch / numpy)
+            shift : amount of shift in A-lambd array to consider
+    """
+
+    lambd = lambd[shift:]
+    if A.ndim == 2:
+        A = A[:, shift:]
+        if torch.is_tensor(A):
+            max_idx = A.argmax(dim=1)
+            A_max = A.max(dim=1).values
+        else:
+            max_idx = A.argmax(axis=1)
+            A_max = A.max(axis=1)
+    else:
+        A = A[shift:]
+        max_idx = A.argmax()
+        A_max = A[max_idx]
+
+    lambd_max = lambd[max_idx]
+    return lambd_max, A_max
