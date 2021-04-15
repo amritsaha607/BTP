@@ -29,6 +29,12 @@ class SeperateLoss(nn.Module):
         """
 
         batch_size, n = y_pred.shape
+
+        if mode.lower() == 'manhattan':
+            d = abs(y_pred - y)
+            loss = d.sum() / (batch_size*n)
+            return loss
+
         d = (y_pred - y)**2
 
         if mode=='mse':
