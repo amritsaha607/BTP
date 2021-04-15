@@ -80,7 +80,8 @@ def helper(e1_mat, e2_mat, split="train", samples=None):
 
     elif split=="val":
         for counter in tqdm(range(samples)):
-            r1 = random.random()*(r1_max-r1_min)
+            # r1 = random.random()*(r1_max-r1_min) # Error in validation data generation
+            r1 = r1_min + random.random()*(r1_max-r1_min)
             r2 = r1 + (random.random()+0.01)*99
             data = (r1, r2, e1, e2, split, e1_mat, e2_mat, counter)
             helperUtil(data)
