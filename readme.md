@@ -111,3 +111,37 @@ lambd_max, A_max = getPeakInfo(A, lambd, shift=0)
     <li>Domain 2 : loss = MSELoss(y, y_pred) + MSELoss(lambd_max, lambd_max_pred) + ManhattanLoss(A_max, A_max_pred) </li>
 </ul>
 
+
+### Model Architecture
+
+<ul>
+    <li>BasicModel : Base model that takes x as input and predicts y_pred as output</li>
+    <li>E1Model : For every e1_material branch, there is a BasicModel</li>
+    <li>E1E2Model : For every (e1_material, e2_material) branch, there is a BasicModel</li>
+    <li>E1E2E3Model : For every (e1_material, e2_material, e3_material) branch, there is a BasicModel</li>
+</ul>
+
+### Prediction
+
+Now that we're given a spectra, (say we're using E1E2Model, assuming e3 is air medium), we pass the spectra through every branch of E1E2Model. Each predicts y_pred, from which x_pred (reconstructed spectra) is calculated. 
+
+
+<br/>
+
+# Run
+
+### Training
+```python
+python3 train.py --domain DOMAIN --version DATANAME_VERSION --model MODEL_ID --save SAVE --data_factors DATA_FACTORS --verbose VERBOSE --mode MODE --log LOG
+```
+
+### Evaluate
+```python
+python3 evaluate.py --version DATANAME_VERSION --model MODEL_ID --verbose VERBOSE --data_factors DATA_FACTORS --mode MODE --domain DOMAIN
+```
+
+### Prediction
+```python
+python3 predict.py --domain DOMAIN --model MODEL_ID --data_factors DATA_FACTORS --mode MODE --log LOG --plot PLOT
+```
+
