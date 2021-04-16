@@ -19,7 +19,7 @@ from models.model import BasicModel, E1E2E3Model, E1E2Model, E1Model
 from models.utils.loss import SeperateLoss
 from data.dataset import AreaDataset
 from data.collate import collate
-from utils.utils import getLossWeights, getLabel, isMode, transform_domain
+from utils.utils import getLossWeights, getLabel, getPeakInfo, isMode, transform_domain
 from utils.parameters import E1_CLASSES, E2_CLASSES, E3_CLASSES
 from utils.decorators import timer
 from utils.operations import dictAdd, dictMultiply
@@ -41,7 +41,9 @@ parser.add_argument(
 parser.add_argument('--model', type=int, default=0, help='Model ID')
 parser.add_argument('--verbose', type=int, default=1, help='To show training progress or not')
 parser.add_argument('--data_factors', type=str, default='f0', 
-    help='To spply factor in dataset')
+    help='To apply factor in dataset')
+parser.add_argument('--loss_weights', type=str, default=None, 
+    help='To apply factor in loss')
 parser.add_argument(
     '--mode', type=str, default='default', 
     help="Mode selects which parameter to predict\
@@ -67,6 +69,7 @@ wid = args.wid
 verbose = args.verbose
 model_ID = args.model
 data_factors = args.data_factors
+loss_weights = args.loss_weights
 mode = args.mode
 save = args.save
 domain = args.domain
@@ -211,17 +214,24 @@ else:
     )
 criterion = SeperateLoss()
 loss_mode, loss_split_mode = 'mse', 'split_re'
-loss_weights = None
-if 'loss_weight' in configs:
+
+if loss_weights:
     loss_mode = 'weighted'
-    loss_split_mode += '_weighted'
-    loss_weight_cfg = os.path.join(LOSS_WEIGHT_DIR, '{}.yml'.format(configs['loss_weight']))
+    loss_weight_cfg = os.path.join(LOSS_WEIGHT_DIR, '{}.yml'.format(loss_weights))
     loss_weight_cfg = yaml.safe_load(open(loss_weight_cfg))
-    loss_weight_cfg = {key: float(val) for key, val in loss_weight_cfg.items()}
-    loss_weights = getLossWeights(
-        weights_dict=loss_weight_cfg,
-        n=n_samples
-    )
+    loss_weights = {key: float(val) for key, val in loss_weight_cfg.items()}
+# print(loss_weights)
+
+# if 'loss_weight' in configs:
+#     loss_mode = 'weighted'
+#     loss_split_mode += '_weighted'
+#     loss_weight_cfg = os.path.join(LOSS_WEIGHT_DIR, '{}.yml'.format(configs['loss_weight']))
+#     loss_weight_cfg = yaml.safe_load(open(loss_weight_cfg))
+#     loss_weight_cfg = {key: float(val) for key, val in loss_weight_cfg.items()}
+#     loss_weights = getLossWeights(
+#         weights_dict=loss_weight_cfg,
+#         n=n_samples
+#     )
 
 if cont is not None:
     cont = int(cont)
@@ -305,15 +315,40 @@ def train(epoch, loader, optimizer, metrics=[],
 
         # For domain 2, x_pred is all you need to get loss
         if domain == 2:
+
+            # Convert to SI units
             r = {
-                'r1': y_pred[:, 0] * data_factors['r'] * 1e-9,
-                'r2': y_pred[:, 1] * data_factors['r'] * 1e-9,
+                'r1': y_pred[:, 0] / data_factors['r'],
+                'r2': y_pred[:, 1] / data_factors['r'],
             }
-            x_pred = getArea(r, eps, train_set.lambd, ret=input_key).T
-            loss = criterion(x_pred, x,
+            x_pred = getArea(r, eps, train_set.lambd, ret=input_key).T * data_factors['A']
+
+            # Extract peak Information, already data factor applied in cross section
+            lambd_max_pred, A_max_pred = getPeakInfo(x_pred, train_set.lambd)
+            lambd_max, A_max = getPeakInfo(x, train_set.lambd)
+
+            # Apply data factors in lambda_max
+            lambd_max = lambd_max * data_factors['lambd']
+            lambd_max_pred = lambd_max_pred * data_factors['lambd']
+
+            lambd_max, lambd_max_pred = lambd_max.unsqueeze(dim=1), lambd_max_pred.unsqueeze(dim=1)
+            A_max, A_max_pred = A_max.unsqueeze(dim=1), A_max_pred.unsqueeze(dim=1)
+
+            loss = criterion(y_pred, y,
                              mode=loss_mode,
                              run='train',
-                             weights=loss_weights)
+                             weights=1)
+            loss += criterion(lambd_max_pred, lambd_max,
+                              mode=loss_mode,
+                              run='train',
+                              weights=1)
+            loss += criterion(A_max_pred, A_max,
+                              mode='manhattan',
+                              run='train',
+                              weights=1)
+
+            # Lambd is in 500 nm ~ 5
+            # A error is in range of 1e-14 => 1
 
         else:
             loss = criterion(y_pred, y,
@@ -443,15 +478,38 @@ def validate(epoch, loader, metrics=[],
 
         # For domain 2, x_pred is all you need to get loss
         if domain == 2:
+
+            # Convert to SI units
             r = {
-                'r1': y_pred[:, 0] * data_factors['r'] * 1e-9,
-                'r2': y_pred[:, 1] * data_factors['r'] * 1e-9,
+                'r1': y_pred[:, 0] / data_factors['r'],
+                'r2': y_pred[:, 1] / data_factors['r'],
             }
-            x_pred = getArea(r, eps, train_set.lambd, ret=input_key).T
-            loss = criterion(x_pred, x,
+            x_pred = getArea(r, eps, val_set.lambd, ret=input_key).T * data_factors['A']
+
+            # Extract peak Information, already data factor applied in cross section
+            lambd_max_pred, A_max_pred = getPeakInfo(x_pred, val_set.lambd)
+            lambd_max, A_max = getPeakInfo(x, val_set.lambd)
+
+            # Apply data factors in lambda_max
+            lambd_max = lambd_max * data_factors['lambd']
+            lambd_max_pred = lambd_max_pred * data_factors['lambd']
+
+            lambd_max, lambd_max_pred = lambd_max.unsqueeze(dim=1), lambd_max_pred.unsqueeze(dim=1)
+            A_max, A_max_pred = A_max.unsqueeze(dim=1), A_max_pred.unsqueeze(dim=1)
+
+            loss = criterion(y_pred, y,
                              mode=loss_mode,
                              run='val',
-                             weights=loss_weights)
+                             weights=1)
+            loss += criterion(lambd_max_pred, lambd_max,
+                              mode=loss_mode,
+                              run='val',
+                              weights=1)
+            loss += criterion(A_max_pred, A_max,
+                              mode='manhattan',
+                              run='val',
+                              weights=1)
+
         else:
             loss = criterion(y_pred, y,
                              mode=loss_mode,
