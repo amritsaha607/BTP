@@ -30,7 +30,7 @@ x_pred &rarr; Predicted Spectra [samples of A_abs_pred] <br/>
 
 <br/>
 
-# Pipeine
+# Pipeline
 
 ## Data Generation
 
